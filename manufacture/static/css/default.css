@@ -1,0 +1,143 @@
+html {
+    width: 100%;
+    min-height: 100%;
+    margin: 0px;
+    padding: 0px;
+}
+body {
+    width: 100%;
+    min-height: 100%;
+    margin: 0px;
+    padding: 0px;
+    background-color: #ffffff;
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 15px;
+	color: black;
+}
+#navbar {
+    width: 100%;
+    height: auto;
+    margin: 0px;
+    padding: 0px;
+    background-color: #667;
+    clear: both;
+    
+    color: white;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 18px;
+}
+#navbar ul {
+    margin: 0px 20px;
+    padding: 0px;
+    list-style-type: none;
+    overflow: hidden;
+}
+#navbar li {
+    margin: 0px;
+    padding: 5px 10px;
+    float: left;
+}
+#navbar li:hover {
+    background-color: #444;
+}
+#navbar a, a:visited {
+    color: inherit;
+}
+#navbar a {
+    display: block;
+    text-align: center;
+    text-decoration:none;
+}
+#title {
+    height: auto;
+    margin: 0px;
+    padding: 0px;
+}
+#title h1 {
+    height: auto;
+    margin: 0px;
+    padding: 20px 0px;
+}
+#title img {
+    height: 70px;
+    margin: 3px 20px;
+    padding: 0px;
+    vertical-align: middle;
+    display: inline-block;
+    float: left;
+}
+#content {
+    min-height: 100vh;
+    margin: 0px;
+    padding: 20px 20px;
+}
+#footer {
+    left: 0px;
+    bottom: 0px;
+    margin: 0px;
+    padding: 25px 0px;
+    height: auto;
+    width: 100%;
+    background-color: #333;
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 15px;
+    color: white;
+    text-align: center;
+}
+
+
+table.striped {
+    margin: 0px;
+    padding: 0px;
+    background-color: #fff;
+}
+table.striped td, th {
+    text-align: left;
+    padding: 5px;
+}
+table.striped tr:first-child {
+    background-color: #ccc;
+}
+table.striped tr:nth-child(odd) {
+    background-color: #eee;
+}
+table.striped tr:nth-child(even) {
+    background-color: #fff;
+}
+
+
+table.borderless {
+    margin: 0px;
+    padding: 0px;
+    background-color: #fff;
+}
+table.borderless tr {
+    background-color: inherit;
+}
+table.borderless td, th {
+    text-align: left;
+    margin: 0px;
+    padding: 0px 10px 0px;
+}
+
+.horizontal-list {
+    display: inline-block;
+    zoom: 1;
+    vertical-align: top;
+}
+
+.thin-border {
+    border-style: solid;
+    border-width: 1px;
+    border-color: #AAA;
+}
+
+/*
+.post-form textarea, .post-form input {
+    width: 100%;
+}
+*/
+
+.django-form label {
+    vertical-align: top;
+}
