@@ -4,7 +4,7 @@
 <%block name="content">
 <div style="width:100%; height:100%;">
     <div class="horizontal-list">
-        <h2>Items</h2>
+        <h2>Items (${item_count})</h2>
         <a href="/new/item/">New Item</a><br />
         <br />
         <table class="striped" style="width:100%;">
@@ -19,7 +19,7 @@
     </div>
     <div class="horizontal-list" style="width:5%;"></div>
     <div class="horizontal-list">
-        <h2>Recipes</h2>
+        <h2>Recipes (${recipe_count})</h2>
         <a href="/new/recipe/">New Recipe</a><br />
         <br />
         <table class="striped" style="width:100%;">

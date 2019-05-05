@@ -1,9 +1,91 @@
-from models import *
-import random
-import peewee
+from models import (
+    Item, Recipe, RecipeInput, RecipeOutput, Stock, 
+    Machine, MachineRecipe, Task, 
+    Notification
+    )
 
 
-class DeepTown:
+class Dataset:
+    table_list = [
+        Item, Recipe, RecipeInput, RecipeOutput, Stock, 
+        Machine, MachineRecipe, Task, 
+        Notification
+    ]
+
+    @classmethod
+    def truncate_db(cls):
+        print("Truncate DB")
+        for model in cls.table_list:
+            model.delete().execute()
+            print("Truncate {}".format(model.__name__))
+        print("Truncate DB done")
+
+    @classmethod
+    def populate_db(cls):
+        print("Populate DB")
+        
+        with db.atomic():
+            Item.insert_many([[name] for name in cls.item_list], fields=[Item.name]).execute()
+        
+            for duration, out_items, in_items in cls.recipe_list:
+                recipe_name = ""
+                for qty, name in out_items:
+                    recipe_name += "{} {} + ".format(qty, name)
+                recipe_name = recipe_name[:-3]
+                recipe = Recipe(
+                    name = recipe_name,
+                    duration = duration,
+                )
+                recipe.save()
+                for model_class, item_list in [[RecipeInput, in_items], [RecipeOutput, out_items]]:
+                    for qty, name in item_list:
+                        model_class.create(
+                            recipe = recipe.id,
+                            item = Item.get(Item.name == name).id,
+                            quantity = qty,
+                        )
+        
+            Machine.insert_many(cls.machine_list, fields=[Machine.quantity, Machine.name]).execute()
+            
+            for machine, recipe_list in cls.machine_recipe_list:
+                machine = Machine.get(Machine.name == machine)
+                for name in recipe_list:
+                    MachineRecipe.create(
+                        machine = machine.id,
+                        recipe = Recipe.get(Recipe.name == name).id,
+                    )
+        
+        print("Populate DB done")
+        return True
+
+    @classmethod
+    def populate_stocks(cls, randomize=True):
+        print("Populate stocks")
+        print("Randomize: {}".format(randomize))
+        
+        Stock.delete().execute()
+        
+        if randomize:
+            with db.atomic():
+                for item in Item.select().order_by('?')[:20]:
+                    Stock.create(
+                        item_id = item,
+                        description = "Default",
+                        quantity = random.randint(300, 27000),
+                    )
+                return
+        
+        with db.atomic():
+            for qty, name in cls.stock_list:
+                Stock.create(
+                    item_id = Item.get(Item.name == name).id,
+                    comment = "Default",
+                    quantity = qty,
+                )
+        print("Populate stocks done")
+
+
+class DeepTown(Dataset):
     item_list = [
         # Mining Station
         "Coal", "Copper", "Iron", "Amber", "Aluminum", "Silver", "Gold", "Emerald", "Platinum",
@@ -139,50 +221,104 @@ class DeepTown:
         [8, "Jewel Crafting"],
         [2, "Uranium Enrichment"],
     ]
-    
-    @classmethod
-    def extra(cls):
-        pass
-    
-    @classmethod
-    def populate_stocks(cls, randomize=True):
-        Stock.objects.all().delete()
+    stock_list = [
+        # Mining Station
+        [9500, "Coal"], [10800, "Copper"], [30000, "Iron"], [54700, "Amber"], [16400, "Aluminum"],
+        [25500, "Silver"], [18300, "Gold"], [65400, "Emerald"], [35200, "Platinum"], [34800, "Topaz"],
+        [7500, "Sapphire"], [13100, "Amethyst"], [1500, "Diamond"], [7500, "Alexandrite"],
+        [48600, "Obsidian"], [31000, "Titanium Ore"], [110, "Uranium"],
         
-        if randomize:
-            for item in Item.objects.order_by('?')[:20]:
-                Stock.objects.create(
-                    item_id = item,
-                    description = "Default",
-                    quantity = random.randint(300, 27000),
-                )
-            '''
-            select * from production_management_item where id in (
-                select id from production_management_item order by random() limit 20
-            )
-            '''
-            return
+        # Chemistry Mining
+        [100, "Silicon"], [19000, "Sulfur"], [39400, "Sodium"], [64, "Nitrogen"],
         
-        for qty, name in [
-            # Mining Station
-            [9500, "Coal"], [10800, "Copper"], [30000, "Iron"], [54700, "Amber"], [16400, "Aluminum"],
-            [25500, "Silver"], [18300, "Gold"], [65400, "Emerald"], [35200, "Platinum"], [34800, "Topaz"],
-            [7500, "Sapphire"], [13100, "Amethyst"], [1500, "Diamond"], [7500, "Alexandrite"],
-            [48600, "Obsidian"], [31000, "Titanium Ore"], [110, "Uranium"],
-            
-            # Chemistry Mining
-            [100, "Silicon"], [19000, "Sulfur"], [39400, "Sodium"], [64, "Nitrogen"],
-            
-            # Water Collector
-            [2000, "Water"],
-            
-            # Oil Mining
-            [225, "Oil"], 
-        ]:
-            Stock.objects.create(
-                item_id = Item.objects.get(name=name),
-                description = "Default",
-                quantity = qty,
-            )
+        # Water Collector
+        [2000, "Water"],
+        
+        # Oil Mining
+        [225, "Oil"], 
+    ]
+    machine_recipe_list = [
+        ["Smelting", [
+            "1 Copper Bar",
+            "1 Iron Bar",
+            "1 Glass",
+            "1 Aluminum Bar",
+            "1 Steel Bar",
+            "1 Silver Bar",
+            "1 Coal",
+            "1 Gold Bar",
+            "1 Steel Plate",
+            "1 Steel Pipe",
+            "1 Titanium Bar",
+        ]],
+        ["Crafting", [
+            "1 Graphite",
+            "10 Copper Nail",
+            "5 Copper Wire",
+            "1 Battery",
+            "1 Circuit",
+            "1 Lamp",
+            "1 Lab Flask",
+            "1 Amber Charger",
+            "1 Aluminum Bottle",
+            "1 Amber Insulation",
+            "1 Insulated Wire",
+            "5 Aluminum Tank",
+            "2 Mirror",
+            "2 Mirror Laser",
+            "5 Green Laser",
+            "1 Diamond Cutter",
+            "1 Motherboard",
+            "1 Solid Propellant",
+            "1 Accumulator",
+            "1 Solar Panel",
+            "1 Gear",
+            "3 Gas Cylinder",
+            "1 Bomb",
+            "1 Compressor",
+            "10 Optic Fiber",
+            "4 Dry Ice",
+            "1 Oxygen Cylinder",
+        ]],
+        ["Chemistry", [
+            "1 Clean Water",
+            "2 Hydrogen + 1 Oxygen",
+            "2 Rubber",
+            "1 Sulfuric Acid",
+            "1 Ethanol",
+            "1 Refined Oil",
+            "1 Plastic Plate",
+            "50 Titanium",
+            "1 Diethyl Ether",
+            "20 Gunpowder",
+            "4 Liquid Nitrogen",
+        ]],
+        ["Greenhouse", [
+            "10 Tree",
+            "1 Liana",
+            "2 Grape",
+        ]],
+        ["Jewel Crafting", [
+            "1 Polished Amber",
+            "1 Polished Emerald",
+            "1 Polished Topaz",
+            "1 Polished Ruby",
+            "1 Polished Diamond",
+            "1 Polished Sapphire",
+            "1 Polished Amethyst",
+            "1 Polished Alexandrite",
+            "1 Polished Obsidian",
+            "1 Emerald Ring",
+            "1 Amber Bracelet",
+            "1 Maya Calendar",
+            "1 Haircomb",
+            "1 Obsidian Knife",
+            "1 Sapphire Crystal Glass",
+        ]],
+        ["Uranium Enrichment", [
+            "1 Uranium Rod",
+        ]],
+    ]
     
     @classmethod
     def add_collector(cls):
@@ -226,7 +362,7 @@ class DeepTown:
             ["Oil Mining", "Oil"],
         ]
 
-class HayDay:
+class HayDay(Dataset):
     item_list = [
         "Wheat", "Carrot", "Sugarcane", "Soybean", "Corn",
         "Chili Pepper", "Cotton", "Indigo", "Pumpkin",
@@ -259,12 +395,8 @@ class HayDay:
         [30*60, [[1, "Butter"]], [[2, "Milk"]]],
         [60*60, [[1, "Cheese"]], [[3, "Milk"]]],
     ]
-    
     machine_list = []
-    
-    @classmethod
-    def extra(cls):
-        pass
+    stock_list = []
 
 
 def get_sample(name):
@@ -274,59 +406,12 @@ def get_sample(name):
     return None
 
 
-def populate_items(name):
-    sample = get_sample(name)
-    if sample is None:
-        print("Sample '{}' not found".format(name))
-        return False
-    
-    Recipe.delete()
-    Item.delete()
-    Stock.delete()
-    
-    with db.atomic():
-        Item.insert_many([[name] for name in sample.item_list], fields=[Item.name]).execute()
-    
-    for duration, out_items, in_items in sample.recipe_list:
-        recipe_name = ""
-        for qty, name in out_items:
-            recipe_name += "{} {} + ".format(qty, name)
-        recipe_name = recipe_name[:-3]
-        recipe = Recipe(
-            name = recipe_name,
-            duration = duration,
-        )
-        recipe.save()
-        for model_class, item_list in [[RecipeInput, in_items], [RecipeOutput, out_items]]:
-            for qty, name in item_list:
-                model_class.create(
-                    recipe = recipe.id,
-                    item = Item.get(Item.name == name).id,
-                    quantity = qty,
-                )
-    
-    with db.atomic():
-        Machine.insert_many(sample.machine_list, fields=[Machine.quantity, Machine.name]).execute()
-    
-    sample.extra()
-    
-    return True
-
-
-def populate_stock(name):
-    sample = get_sample(name)
-    if sample is None:
-        print("Sample '{}' not found".format(name))
-        return False
-    
-    sample.populate_stocks(randomize=True)
-    
-    return True
-
-
-def main():
-    from PyQt5 import QtCore, QtGui, QtWidgets, uic
+if __name__ == '__main__':
     import sys
+    import random
+    from PyQt5 import QtCore, QtGui, QtWidgets, uic
+    import peewee
+    from models import db
 
 
     class TableExplorer(QtWidgets.QWidget):
@@ -334,21 +419,23 @@ def main():
             super(TableExplorer, self).__init__()
             uic.loadUi('TableExplorer.ui', self)
 
-            self.table_list = [Item, Recipe, RecipeInput, RecipeOutput, Stock, Machine, MachineRecipe, Task, Notification]
-            #db = peewee.SqliteDatabase('pyramidapp.db')
+            self.dataset = DeepTown
+
             db.init('test.sqlite3')
             #db.init(':memory:')
             db.connect()
-            db.create_tables(self.table_list)
-            #populate_items('DeepTown')
-            self.table_selector.addItems([table.__name__ for table in self.table_list])
+            db.create_tables(Dataset.table_list)
+            self.table_selector.addItems([table.__name__ for table in Dataset.table_list])
             self.table_selector.currentIndexChanged.connect(self.update_data)
 
             self.data_model = QtGui.QStandardItemModel(self.data_table)
             self.update_data(0)
+            self.truncate_button.clicked.connect(self.dataset.truncate_db)
+            self.populate_button.clicked.connect(self.dataset.populate_db)
+            self.random_stock_button.clicked.connect(self.dataset.populate_stocks)
 
         def update_data(self, index):
-            selected_table = self.table_list[index]
+            selected_table = Dataset.table_list[index]
             self.data_model = QtGui.QStandardItemModel(self.data_table)
             for i, column in enumerate(list(selected_table._meta.fields.keys())):
                 self.data_model.setHorizontalHeaderItem(i, QtGui.QStandardItem(column));
@@ -361,6 +448,3 @@ def main():
     table_explorer.show()
     sys.exit(app.exec_())
 
-
-if __name__ == '__main__':
-    main()

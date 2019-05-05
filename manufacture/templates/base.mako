@@ -7,9 +7,12 @@ is_authenticated = True
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <link rel="stylesheet" href="/static/css/default.css">
+        <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.css">
+        <script src="/static/bootstrap/js/bootstrap.js"></script>
+        <link rel="stylesheet" href="/static/default/css/default.css">
         <link rel="shortcut icon" href="/static/favicon.ico" />
-        <script src="/static/js/jquery.min.js"></script>
+        <link rel="stylesheet" href="/static/default/css/bootstrap-duration-picker.css">
+        <script src="/static/default/js/jquery.min.js"></script>
         <title>Site</title>
     </head>
     <body>
@@ -20,17 +23,16 @@ is_authenticated = True
         <div id="navbar">
             <ul><%block name="navbar">
             % if is_authenticated:
-            <a href="/"><li>HOME</li></a>
-            <a href="/items/"><li>ITEMS</li></a>
-            <a href="/stocks/"><li>INVENTORY</li></a>
-            <a href="/machines/"><li>MACHINES</li></a>
-            <a href="/tasks/"><li>TASK</li></a>
-            <a href="/notifications/"><li>NOTIFICATIONS</li></a>
-            <a href="/database/"><li>DATABASE</li></a>
-            <a href="/logout/"><li style="float:right;">Logout</li></a>
+                <a href="${request.route_url('home')}"><li>HOME</li></a>
+                <a href="${request.route_url('list_items')}"><li>ITEMS & RECIPES</li></a>
+                <a href="${request.route_url('list_stocks')}"><li>INVENTORY</li></a>
+                <a href="${request.route_url('list_machines')}"><li>MACHINES</li></a>
+                <a href="${request.route_url('list_tasks')}"><li>TASK</li></a>
+                <a href="${request.route_url('list_notifications')}"><li>NOTIFICATIONS</li></a>
+                <a href="/logout/"><li style="float:right;">Logout</li></a>
             % else:
-            <a href="/"><li>HOME</li></a>
-            <a href="/login/"><li style="float:right;">Login</li></a>
+                <a href="${request.route_url('home')}"><li>HOME</li></a>
+                <a href="/login/"><li style="float:right;">Login</li></a>
             % endif
             </%block></ul>
         </div>

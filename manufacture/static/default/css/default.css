@@ -138,6 +138,6 @@ table.borderless td, th {
 }
 */
 
-.django-form label {
+.post-form label {
     vertical-align: top;
 }

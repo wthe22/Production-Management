@@ -3,7 +3,9 @@
 
 <%block name="content">
 <h2>${item.name}</h2>
-<a href="/edit/item/${item.id}/">Edit</a><br />
+<a href="/edit/item/${item.id}/">Edit</a>
+<a href="/delete/item/${item.id}/">Delete</a>
+<br />
 <br />
 <div style="width:100%; height:50%; display: flex;">
     <div class="horizontal-list">

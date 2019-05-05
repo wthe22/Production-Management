@@ -89,8 +89,9 @@ class Task(BaseModel):
     id = AutoField(primary_key=True)
     machine = ForeignKeyField(Machine, on_delete='CASCADE')
     recipe = ForeignKeyField(Recipe, on_delete='CASCADE')
-    description = TextField(null=True)
+    comment = CharField(null=True)
     start_time = IntegerField()
+    check_time = IntegerField()
     end_time = IntegerField(null=True)
     
     def __str__(self):
@@ -100,5 +101,11 @@ class Task(BaseModel):
 class Notification(BaseModel):
     id = AutoField(primary_key=True)
     time = IntegerField(default=0)
-    text = TextField()
+    title = CharField()
+    text = TextField(null=True)
 
+
+class User(BaseModel):
+    id = AutoField(primary_key=True)
+    username = CharField()
+    password = CharField()
