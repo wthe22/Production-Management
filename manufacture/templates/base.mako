@@ -7,12 +7,13 @@ is_authenticated = True
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <link rel="shortcut icon" href="/static/favicon.ico" />
         <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.css">
         <script src="/static/bootstrap/js/bootstrap.js"></script>
         <link rel="stylesheet" href="/static/default/css/default.css">
-        <link rel="shortcut icon" href="/static/favicon.ico" />
         <link rel="stylesheet" href="/static/default/css/bootstrap-duration-picker.css">
         <script src="/static/default/js/jquery.min.js"></script>
+        <script src="/static/default/js/template-form.js"></script>
         <title>Site</title>
     </head>
     <body>
