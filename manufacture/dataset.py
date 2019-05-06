@@ -362,6 +362,7 @@ class DeepTown(Dataset):
             ["Oil Mining", "Oil"],
         ]
 
+
 class HayDay(Dataset):
     item_list = [
         "Wheat", "Carrot", "Sugarcane", "Soybean", "Corn",
@@ -406,45 +407,55 @@ def get_sample(name):
     return None
 
 
+import sys
+import random
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
+import peewee
+from models import db
+
+
+class TableExplorer(QtWidgets.QWidget):
+    def __init__(self):
+        super(TableExplorer, self).__init__()
+        uic.loadUi('TableExplorer.ui', self)
+
+        self.dataset = DeepTown
+
+        db.init('test.sqlite3')
+        #db.init(':memory:')
+        db.connect()
+        db.create_tables(Dataset.table_list)
+        self.table_selector.addItems([table.__name__ for table in Dataset.table_list])
+        self.table_selector.currentIndexChanged.connect(self.update_data)
+        
+
+        self.data_model = QtGui.QStandardItemModel(self.data_table)
+        self.update_data(0)
+        self.truncate_button.clicked.connect(self.dataset.truncate_db)
+        self.populate_button.clicked.connect(self.dataset.populate_db)
+        self.random_stock_button.clicked.connect(self.dataset.populate_stocks)
+
+    def update_data(self, index):
+        selected_table = Dataset.table_list[index]
+        self.data_model = QtGui.QStandardItemModel(self.data_table)
+        for i, column in enumerate(list(selected_table._meta.fields.keys())):
+            self.data_model.setHorizontalHeaderItem(i, QtGui.QStandardItem(column));
+        for item in selected_table.select().tuples():
+            self.data_model.appendRow([QtGui.QStandardItem(str(data)) for data in item])
+        self.data_table.setModel(self.data_model)
+
+
 if __name__ == '__main__':
-    import sys
-    import random
-    from PyQt5 import QtCore, QtGui, QtWidgets, uic
-    import peewee
-    from models import db
-
-
-    class TableExplorer(QtWidgets.QWidget):
-        def __init__(self):
-            super(TableExplorer, self).__init__()
-            uic.loadUi('TableExplorer.ui', self)
-
-            self.dataset = DeepTown
-
-            db.init('test.sqlite3')
-            #db.init(':memory:')
-            db.connect()
-            db.create_tables(Dataset.table_list)
-            self.table_selector.addItems([table.__name__ for table in Dataset.table_list])
-            self.table_selector.currentIndexChanged.connect(self.update_data)
-
-            self.data_model = QtGui.QStandardItemModel(self.data_table)
-            self.update_data(0)
-            self.truncate_button.clicked.connect(self.dataset.truncate_db)
-            self.populate_button.clicked.connect(self.dataset.populate_db)
-            self.random_stock_button.clicked.connect(self.dataset.populate_stocks)
-
-        def update_data(self, index):
-            selected_table = Dataset.table_list[index]
-            self.data_model = QtGui.QStandardItemModel(self.data_table)
-            for i, column in enumerate(list(selected_table._meta.fields.keys())):
-                self.data_model.setHorizontalHeaderItem(i, QtGui.QStandardItem(column));
-            for item in selected_table.select().tuples():
-                self.data_model.appendRow([QtGui.QStandardItem(str(data)) for data in item])
-            self.data_table.setModel(self.data_model)
-
-    app = QtWidgets.QApplication(sys.argv)
-    table_explorer = TableExplorer()
-    table_explorer.show()
-    sys.exit(app.exec_())
-
+    use_gui = True
+    use_gui = False
+    
+    if use_gui:
+        app = QtWidgets.QApplication(sys.argv)
+        table_explorer = TableExplorer()
+        table_explorer.show()
+        sys.exit(app.exec_())
+    else:
+        db.init('test.sqlite3')
+        db.connect()
+        db.create_tables(Dataset.table_list)
+        print(Stock._meta.fields.keys())

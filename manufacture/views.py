@@ -6,8 +6,6 @@ from pyramid.httpexceptions import (
     HTTPFound,
     exception_response
     )
-import colander
-import deform.widget
 from .models import (
     Item, Recipe, RecipeInput, RecipeOutput, Stock, 
     Machine, MachineRecipe, Task, 
@@ -43,6 +41,66 @@ def display_time(seconds, granularity=2):
     return ', '.join(result[:granularity])
 
 
+class PostForm:
+    defaults = {
+        'generic': {
+            'name': None,
+            'label': None,
+            'required': False,
+            'value': '',
+            #'multiple': False,
+        },
+        'number': {
+            'min': '',
+            'max': '',
+        },
+        'select': {
+            'options': [],
+        },
+    }
+    
+    def __init__(self, name, components, action="submit"):
+        self.name = name
+        self.action = action
+        self.components = []
+        for i, parameters in enumerate(components):
+            type = parameters['type']
+            field = dict(self.defaults['generic'])
+            if type in self.defaults:
+                field.update(self.defaults[type])
+            field.update(parameters)
+            self.components.append(field)
+
+    def schema(self):
+        str_schema = ""
+        for field in self.components:
+            str_schema += "{"
+            for key, value in field.items():
+                str_schema += "'{}': ".format(key)
+                
+                if field[key] is None:
+                    str_schema += "''"
+                elif isinstance(field[key], bool):
+                    str_schema += str(field[key]).lower()
+                elif isinstance(field[key], list):
+                    str_schema += str(field[key])
+                else:
+                    str_schema += "\"" + str(field[key]).replace('&', '&amp;').replace('"', '&quot;') + "\""
+                str_schema += ", "
+            str_schema += "}, "
+        return "'{}', '{}', [{}]".format(self.name, self.action, str_schema)
+    
+    def extract_values(self, params):
+        values = {}
+        for field in self.components:
+            key = field['name']
+            value = params.get("{}__{}".format(self.name, key), None)
+            if value == '' and field['type'] == 'number':
+                value = None
+            values[key] = value
+        return values
+
+
 class AuthView():
     def __init__(self, request):
         self.request = request
@@ -60,22 +118,65 @@ class AuthView():
 
 class ModelView():
     model = None
-    editable_fields = None
     
-    class EditForm(colander.MappingSchema):
-        pass
-
+    def form_component(self, name):
+        components = {
+            'name': {
+                'label': "Name",
+                'type': "text",
+                'required': True,
+            },
+            'description': {
+                'label': "Description",
+                'type': "textarea",
+            },
+            'duration': {
+                'label': "Duration",
+                'type': "number",
+                'required': True,
+            },
+            'quantity': {
+                'label': "Quantity",
+                'type': "number",
+                'required': True,
+            },
+            'comment': {
+                'label': "Comment",
+                'type': "text",
+                'required': True,
+            },
+            'item_id': {
+                'label': "Item",
+                'type': "select",
+                'required': True,
+                'options': [[item.id, item.name] for item in Item.select().order_by(Item.name)],
+            },
+            'recipe_id': {
+                'label': "Recipe",
+                'type': "select",
+                'required': True,
+                'options': [[recipe.id, recipe.name] for recipe in Recipe.select().order_by(Recipe.name)],
+            },
+            'machine_id': {
+                'label': "Machine",
+                'type': "select",
+                'required': True,
+                'options': [[machine.id, machine.name] for machine in Machine.select().order_by(Machine.name)],
+            },
+            'start_time': {
+                'label': "Start Time",
+                'type': "number",
+                'required': True,
+            },
+            'end_time': {
+                'label': "End Time",
+                'type': "number",
+            },
+        }
+        return {**components[name], 'name': name}
+    
     def __init__(self, request):
         self.request = request
-
-    @property
-    def edit_form(self):
-        schema = self.EditForm()
-        return deform.Form(schema, buttons=('submit',))
-
-    @property
-    def reqts(self):
-        return self.edit_form.get_widget_resources()
 
     def get_or_404(self):
         id = self.request.matchdict['id']
@@ -84,57 +185,46 @@ class ModelView():
         except self.model.DoesNotExist:
             raise exception_response(404)
 
-    def new(self, success_route=None):
+    def add_new(self, success_route, fields):
+        edit_form = PostForm(
+            name = 'edit',
+            action = 'submit',
+            components = [self.form_component(field) for field in fields],
+        )
+        
         if 'submit' in self.request.params:
-            controls = self.request.POST.items()
-            try:
-                appstruct = self.edit_form.validate(controls)
-            except deform.ValidationFailure as e:
-                return dict(form=e.render(), heading="New {}".format(self.model.__name__))
-
-            form_values = {}
-            for field in self.editable_fields:
-                form_values[field] = appstruct[field]
+            form_values = edit_form.extract_values(self.request.params)
             self.model.create(**form_values)
-            
             url = self.request.route_url(success_route)
             return HTTPFound(url)
 
-        form = self.edit_form.render()
-        
         return {
             'heading': "Add new {}".format(self.model.__name__),
-            'form': form,
+            'edit_form_schema': edit_form.schema(),
         }
 
-    def edit(self, success_route=None):
+    def edit(self, success_route, fields):
         selected = self.get_or_404()
         
+        edit_form = PostForm(
+            name = 'edit',
+            action = 'submit',
+            components = [{**self.form_component(field), 'value': getattr(selected, field)} for field in fields],
+        )
+        
         if 'submit' in self.request.params:
-            controls = self.request.POST.items()
-            try:
-                appstruct = self.edit_form.validate(controls)
-            except deform.ValidationFailure as e:
-                return dict(form=e.render())
-
-            for field in self.editable_fields:
-                setattr(selected, field, appstruct[field])
+            form_values = edit_form.extract_values(self.request.params)
+            for key, value in form_values.items():
+                setattr(selected, key, value)
             selected.save()
-
             url = self.request.route_url(success_route)
             return HTTPFound(url)
 
-        form_values = {}
-        for field in self.editable_fields:
-            form_values[field] = getattr(selected, field)
-        
-        form = self.edit_form.render(form_values)
-        
         return {
             'heading': "Edit {}".format(self.model.__name__),
-            'form': form,
+            'edit_form_schema': edit_form.schema(),
         }
-    
+
     def delete(self, success_route=None):
         selected = self.get_or_404()
         selected.delete_instance()
@@ -144,22 +234,7 @@ class ModelView():
 
 class ItemView(ModelView):
     model = Item
-    editable_fields = ['name', 'description']
     
-    class EditForm(colander.MappingSchema):
-        name = colander.SchemaNode(colander.String())
-        description = colander.SchemaNode(colander.String(), widget=deform.widget.TextAreaWidget())
-
-    @view_config(route_name='show_item', renderer='templates/show_item.mako')
-    def show(self):
-        item = self.get_or_404()
-        
-        return {
-            'item': item,
-            'recipe_input': RecipeInput.select().where(RecipeInput.item_id == item.id).order_by(RecipeInput.item.name),
-            'recipe_output': RecipeOutput.select().where(RecipeOutput.item_id == item.id).order_by(RecipeOutput.item.name),
-        }
-
     @view_config(route_name='list_items', renderer='templates/list_items.mako')
     def list(self):
         recipe_list = Recipe.select().order_by(Recipe.name)
@@ -182,13 +257,29 @@ class ItemView(ModelView):
             'recipe_full_list': recipe_full_list,
         }
 
-    @view_config(route_name='new_item', renderer='templates/deform_edit.mako')
-    def new(self):
-        return super(self.__class__, self).new(success_route='list_items')
+    @view_config(route_name='show_item', renderer='templates/show_item.mako')
+    def show(self):
+        item = self.get_or_404()
+        
+        return {
+            'item': item,
+            'recipe_input': RecipeInput.select().where(RecipeInput.item_id == item.id).order_by(RecipeInput.item.name),
+            'recipe_output': RecipeOutput.select().where(RecipeOutput.item_id == item.id).order_by(RecipeOutput.item.name),
+        }
 
-    @view_config(route_name='edit_item', renderer='templates/deform_edit.mako')
+    @view_config(route_name='new_item', renderer='templates/generic/edit.mako')
+    def add_new(self):
+        return super(self.__class__, self).add_new(
+            success_route = 'list_items',
+            fields = ['name', 'description']
+        )
+
+    @view_config(route_name='edit_item', renderer='templates/generic/edit.mako')
     def edit(self):
-        return super(self.__class__, self).edit(success_route='list_items')
+        return super(self.__class__, self).edit(
+            success_route = 'list_items',
+            fields = ['name', 'description']
+        )
 
     @view_config(route_name='delete_item', renderer='templates/show_item.mako')
     def delete(self):
@@ -197,13 +288,7 @@ class ItemView(ModelView):
 
 class RecipeView(ModelView):
     model = Recipe
-    editable_fields = ['name', 'description', 'duration']
     
-    class EditForm(colander.MappingSchema):
-        name = colander.SchemaNode(colander.String())
-        description = colander.SchemaNode(colander.String(), widget=deform.widget.TextAreaWidget())
-        duration = colander.SchemaNode(colander.Time(), widget=deform.widget.TimeInputWidget())
-
     @view_config(route_name='show_recipe', renderer='templates/recipe/show.mako')
     def show(self):
         recipe = self.get_or_404()
@@ -216,50 +301,18 @@ class RecipeView(ModelView):
         }
 
     @view_config(route_name='new_recipe', renderer='templates/recipe/edit.mako')
-    def new(self):
-        success_route = 'list_items'
-        
-        form_values = {
-            'name': "",
-            'description': "",
-            'duration': 0,
-        }
-        if 'submit' in self.request.params:
-            form_values = {}
-            for field in self.editable_fields:
-                value = self.request.params[field]
-                if value:
-                    form_values[field] = value
-            self.model.create(**form_values)
-            url = self.request.route_url(success_route)
-            return HTTPFound(url)
-
-        return {
-            'heading': "Add new {}".format(self.model.__name__),
-            'form_values': form_values,
-        }
+    def add_new(self):
+        return super(self.__class__, self).add_new(
+            success_route = 'list_items',
+            fields = ['name', 'description', 'duration']
+        )
 
     @view_config(route_name='edit_recipe', renderer='templates/recipe/edit.mako')
     def edit(self):
-        success_route = 'list_items'
-        selected = self.get_or_404()
-        
-        form_values = {}
-        if 'submit' in self.request.params:
-            selected.name = self.request.params['name']
-            selected.description = self.request.params['description']
-            selected.duration = int(self.request.params['duration'])
-            selected.save()
-            url = self.request.route_url(success_route)
-            return HTTPFound(url)
-        else:
-            for field in self.editable_fields:
-                form_values[field] = getattr(selected, field)
-        
-        return {
-            'heading': "Edit {}".format(self.model.__name__),
-            'form_values': form_values,
-        }
+        return super(self.__class__, self).edit(
+            success_route = 'list_items',
+            fields = ['name', 'description', 'duration']
+        )
 
     @view_config(route_name='delete_recipe', renderer='templates/recipe/show.mako')
     def delete(self):
@@ -268,71 +321,27 @@ class RecipeView(ModelView):
 
 class StockView(ModelView):
     model = Stock
-    editable_fields = ['item', 'description', 'quantity']
     
-    class EditForm(colander.MappingSchema):
-        name = colander.SchemaNode(colander.String())
-        description = colander.SchemaNode(colander.String(), widget=deform.widget.TextAreaWidget())
-        quantity = colander.SchemaNode(colander.Integer(), validator=colander.Range(0, 10000))
-
     @view_config(route_name='list_stocks', renderer='templates/stock/list.mako')
     def list(request):
         return {
             'stock_list': Stock.select().order_by(Stock.item.name)
         }
 
-    @view_config(route_name='new_stock', renderer='templates/stock/edit.mako')
-    def new(self):
-        success_route = 'list_stocks'
-        
-        form_values = {
-            'item': [[item.id, item.name] for item in Item.select().order_by(Item.name)],
-            'comment': "",
-            'description': "",
-            'quantity': 0,
-        }
-        if 'submit' in self.request.params:
-            form_values = {}
-            for field in ['item', 'comment', 'description', 'quantity']:
-                value = self.request.params[field]
-                if value:
-                    form_values[field] = value
-            self.model.create(**form_values, check_time=0)
-            url = self.request.route_url(success_route)
-            return HTTPFound(url)
+    @view_config(route_name='new_stock', renderer='templates/generic/edit.mako')
+    def add_new(self):
+        return super(self.__class__, self).add_new(
+            success_route = 'list_stocks',
+            fields = ['item_id', 'comment', 'description', 'quantity']
+        )
 
-        return {
-            'heading': "Add new {}".format(self.model.__name__),
-            'form_values': form_values,
-        }
-
-    @view_config(route_name='edit_stock', renderer='templates/stock/edit.mako')
+    @view_config(route_name='edit_stock', renderer='templates/generic/edit.mako')
     def edit(self):
-        success_route = 'list_stocks'
-        selected = self.get_or_404()
-        
-        form_values = {
-            'item': [[item.id, item.name] for item in Item.select().order_by(Item.name)],
-            'comment': selected.comment,
-            'description': selected.description,
-            'quantity': selected.quantity,
-        }
-        if 'submit' in self.request.params:
-            form_values = {}
-            for field in ['item', 'comment', 'description', 'quantity']:
-                value = self.request.params[field]
-                if value:
-                    form_values[field] = value
-            self.model.create(**form_values, check_time=0)
-            url = self.request.route_url(success_route)
-            return HTTPFound(url)
+        return super(self.__class__, self).edit(
+            success_route = 'list_stocks',
+            fields = ['item_id', 'comment', 'description', 'quantity']
+        )
 
-        return {
-            'heading': "Edit {}".format(self.model.__name__),
-            'form_values': form_values,
-        }
-
-    
     @view_config(route_name='delete_stock', renderer='templates/list_stocks.mako')
     def delete(self):
         return super(self.__class__, self).delete(success_route='list_stocks')
@@ -340,13 +349,7 @@ class StockView(ModelView):
 
 class MachineView(ModelView):
     model = Machine
-    editable_fields = ['name', 'description', 'quantity']
     
-    class EditForm(colander.MappingSchema):
-        name = colander.SchemaNode(colander.String())
-        description = colander.SchemaNode(colander.String(), widget=deform.widget.TextAreaWidget())
-        quantity = colander.SchemaNode(colander.Integer(), validator=colander.Range(0, 10000))
-
     @view_config(route_name='list_machines', renderer='templates/machine/list.mako')
     def list(request):
         return {
@@ -361,13 +364,19 @@ class MachineView(ModelView):
             'recipe_list': [machine_recipe.recipe for machine_recipe in MachineRecipe.select().where(MachineRecipe.machine_id == machine.id).order_by(MachineRecipe.recipe.name)],
         }
 
-    @view_config(route_name='new_machine', renderer='templates/deform_edit.mako')
-    def new(self):
-        return super(self.__class__, self).new(success_route='list_machines')
+    @view_config(route_name='new_machine', renderer='templates/generic/edit.mako')
+    def add_new(self):
+        return super(self.__class__, self).add_new(
+            success_route = 'list_machines',
+            fields = ['name', 'description', 'quantity']
+        )
 
-    @view_config(route_name='edit_machine', renderer='templates/deform_edit.mako')
+    @view_config(route_name='edit_machine', renderer='templates/generic/edit.mako')
     def edit(self):
-        return super(self.__class__, self).edit(success_route='list_machines')
+        return super(self.__class__, self).edit(
+            success_route = 'list_machines',
+            fields = ['name', 'description', 'quantity']
+        )
 
     @view_config(route_name='delete_machine', renderer='templates/show_machine.mako')
     def delete(self):
@@ -376,15 +385,7 @@ class MachineView(ModelView):
 
 class TaskView(ModelView):
     model = Task
-    editable_fields = ['name', 'recipe', 'comment', 'start_time', 'end_time']
     
-    class EditForm(colander.MappingSchema):
-        name = colander.SchemaNode(colander.String())
-        recipe = colander.SchemaNode(colander.String())
-        comment = colander.SchemaNode(colander.String())
-        start_time = colander.SchemaNode(colander.DateTime(), widget=deform.widget.DateTimeInputWidget())
-        end_time = colander.SchemaNode(colander.DateTime(), widget=deform.widget.DateTimeInputWidget())
-
     @view_config(route_name='list_tasks', renderer='templates/task/list.mako')
     def list(request):
         task_list = []
@@ -403,61 +404,20 @@ class TaskView(ModelView):
             'machine': machine,
         }
 
-    @view_config(route_name='new_task', renderer='templates/task/add.mako')
-    def new(self):
-        success_route = 'list_tasks'
-        
-        form_values = {
-            'machine': [[machine.id, machine.name] for machine in Machine.select().order_by(Machine.name)],
-            'recipe': [[recipe.id, recipe.name] for recipe in Recipe.select().order_by(Recipe.name)],
-            'comment': "",
-            'start_time': 0,
-            'end_time': 0,
-        }
-        #'recipe': [[machine_recipe.recipe.id, machine_recipe.recipe.name] for machine_recipe in MachineRecipe.select().order_by(MachineRecipe.recipe.name)],
-        if 'submit' in self.request.params:
-            form_values = {}
-            for field in ['machine', 'recipe', 'comment', 'start_time', 'end_time']:
-                value = self.request.params[field]
-                if value:
-                    form_values[field] = value
-            self.model.create(**form_values, check_time=0)
-            url = self.request.route_url(success_route)
-            return HTTPFound(url)
+    @view_config(route_name='new_task', renderer='templates/generic/edit.mako')
+    def add_new(self):
+        return super(self.__class__, self).add_new(
+            success_route = 'list_tasks',
+            fields = ['machine_id', 'recipe_id', 'comment', 'start_time', 'end_time']
+        )
 
-        return {
-            'heading': "Add new {}".format(self.model.__name__),
-            'form_values': form_values,
-        }
-
-    @view_config(route_name='edit_task', renderer='templates/task/edit.mako')
+    @view_config(route_name='edit_task', renderer='templates/generic/edit.mako')
     def edit(self):
-        success_route = 'list_tasks'
-        machine = self.get_or_404()
-        
-        form_values = {
-            'machine': [[machine.id, machine.name] for machine in Machine.select().order_by(Machine.name)],
-            'recipe': [[recipe.id, recipe.name] for recipe in Recipe.select().order_by(Recipe.name)],
-            'comment': machine.comment,
-            'start_time': machine.start_time,
-            'end_time': machine.end_time,
-        }
-        #'recipe': [[machine_recipe.recipe.id, machine_recipe.recipe.name] for machine_recipe in MachineRecipe.select().order_by(MachineRecipe.recipe.name)],
-        if 'submit' in self.request.params:
-            form_values = {}
-            for field in ['machine', 'recipe', 'comment', 'start_time', 'end_time']:
-                value = self.request.params[field]
-                if value:
-                    form_values[field] = value
-            self.model.create(**form_values, check_time=0)
-            url = self.request.route_url(success_route)
-            return HTTPFound(url)
-
-        return {
-            'heading': "Edit {}".format(self.model.__name__),
-            'form_values': form_values,
-        }
-
+        return super(self.__class__, self).edit(
+            success_route = 'list_tasks',
+            fields = ['comment', 'end_time']
+        )
+    
     @view_config(route_name='delete_task', renderer='templates/task/list.mako')
     def delete(self):
         return super(self.__class__, self).delete(success_route='list_tasks')
