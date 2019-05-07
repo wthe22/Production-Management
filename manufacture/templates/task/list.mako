@@ -1,5 +1,10 @@
 <%inherit file="../base.mako" />
 
+<%!
+import time
+time_format = "%Y-%m-%d %H:%M"
+%>
+
 
 <%block name="content">
 <h2>Task</h2>
@@ -14,8 +19,12 @@
                 <td><a href="/machine/${task.machine.id}/">${task.machine.name}</a></td>
                 <td><a href="/recipe/${task.recipe.id}/">${task.recipe.name}</a></td>
                 <td>${task.comment}</td>
-                <td>${task.start_time}</td>
-                <td>${task.end_time}</td>
+                <td>${time.strftime(time_format, time.localtime(task.start_time))}</td>
+                % if task.end_time is None:
+                    <td></td>
+                % else:
+                    <td>${time.strftime(time_format, time.localtime(task.end_time))}</td>
+                % endif
                 <td>
                     <a href="/edit/task/${task.id}/">Edit</a>
                     <a href="/delete/task/${task.id}/">Delete</a>

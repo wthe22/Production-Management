@@ -15,13 +15,20 @@ class EditForm {
     
     validate() {
         for (var i = 0; i < this.fields.length; i++) {
+            var field = $(`#${this.id}__${this.fields[i].name}`)
+            if (this.fields[i].type == 'datetime')
+                field = $(`#${this.id}__${this.fields[i].name}_iso8601`)
             if (this.fields[i].required) {
-                var value = $(`#${this.id}__${this.fields[i].name}`).val()
+                var value = field.val()
                 if (value == null || value == '') {
-                    $(`#${this.id}__${this.fields[i].name}`).focus();
+                    field.focus();
                     alert(`${this.fields[i].label} is empty!`);
                     return false;
                 }
+            }
+            if (this.fields[i].type == 'datetime') {
+                var date = new Date(field.val())
+                $(`#${this.id}__${this.fields[i].name}`).val(date.getTime()/1000)
             }
         }
         return true;
@@ -54,18 +61,26 @@ class EditForm {
                 }
                 form_html += `</select>`;
             }
-            if (this.fields[i].type == "textarea") {
+            if (this.fields[i].type == 'textarea') {
                 form_html += `<textarea rows="4" cols="50"`
                 form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}" >`;
                 form_html += `${this.fields[i].value}</textarea>`
             }
-            if (this.fields[i].type == "text") {
+            if (this.fields[i].type == 'text') {
                 form_html += `<input type="text" value="${this.fields[i].value}" autocomplete="off"`;
                 form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}"/>`;
             }
-            if (this.fields[i].type == "number") {
+            if (this.fields[i].type == 'number') {
                 form_html += `<input type="number" value="${this.fields[i].value}" autocomplete="off"`;
                 form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}"/>`;
+            }
+            if (this.fields[i].type == 'datetime') {
+                var date = new Date(this.fields[i].value * 1000);
+                var local_iso_date = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().substring(0,16);
+                form_html += `<input type="hidden" value="${this.fields[i].value}" autocomplete="off"`;
+                form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}"/>`;
+                form_html += `<input type="datetime-local" value="${local_iso_date}" autocomplete="off"`;
+                form_html += ` id="${this.id}__${this.fields[i].name}_iso8601"/>`;
             }
             form_html += "</td>";
             

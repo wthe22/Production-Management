@@ -120,6 +120,7 @@ table.borderless td, th {
     padding: 0px 10px 0px;
 }
 
+
 .horizontal-list {
     display: inline-block;
     zoom: 1;
@@ -131,12 +132,6 @@ table.borderless td, th {
     border-width: 1px;
     border-color: #AAA;
 }
-
-/*
-.post-form textarea, .post-form input {
-    width: 100%;
-}
-*/
 
 .post-form label {
     vertical-align: top;

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from pyramid.view import (
     view_config,
     view_defaults
@@ -11,6 +12,7 @@ from .models import (
     Machine, MachineRecipe, Task, 
     Notification
     )
+from .forms import PostForm
 
 
 @view_config(route_name='home', renderer='templates/base.mako')
@@ -39,66 +41,6 @@ def display_time(seconds, granularity=2):
                 name = name.rstrip('s')
             result.append("{} {}".format(value, name))
     return ', '.join(result[:granularity])
-
-
-class PostForm:
-    defaults = {
-        'generic': {
-            'name': None,
-            'label': None,
-            'required': False,
-            'value': '',
-            #'multiple': False,
-        },
-        'number': {
-            'min': '',
-            'max': '',
-        },
-        'select': {
-            'options': [],
-        },
-    }
-    
-    def __init__(self, name, components, action="submit"):
-        self.name = name
-        self.action = action
-        self.components = []
-        for i, parameters in enumerate(components):
-            type = parameters['type']
-            field = dict(self.defaults['generic'])
-            if type in self.defaults:
-                field.update(self.defaults[type])
-            field.update(parameters)
-            self.components.append(field)
-
-    def schema(self):
-        str_schema = ""
-        for field in self.components:
-            str_schema += "{"
-            for key, value in field.items():
-                str_schema += "'{}': ".format(key)
-                
-                if field[key] is None:
-                    str_schema += "''"
-                elif isinstance(field[key], bool):
-                    str_schema += str(field[key]).lower()
-                elif isinstance(field[key], list):
-                    str_schema += str(field[key])
-                else:
-                    str_schema += "\"" + str(field[key]).replace('&', '&amp;').replace('"', '&quot;') + "\""
-                str_schema += ", "
-            str_schema += "}, "
-        return "'{}', '{}', [{}]".format(self.name, self.action, str_schema)
-    
-    def extract_values(self, params):
-        values = {}
-        for field in self.components:
-            key = field['name']
-            value = params.get("{}__{}".format(self.name, key), None)
-            if value == '' and field['type'] == 'number':
-                value = None
-            values[key] = value
-        return values
 
 
 class AuthView():
@@ -165,12 +107,12 @@ class ModelView():
             },
             'start_time': {
                 'label': "Start Time",
-                'type': "number",
+                'type': "datetime",
                 'required': True,
             },
             'end_time': {
                 'label': "End Time",
-                'type': "number",
+                'type': "datetime",
             },
         }
         return {**components[name], 'name': name}

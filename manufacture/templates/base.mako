@@ -11,9 +11,8 @@ is_authenticated = True
         <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.css">
         <script src="/static/bootstrap/js/bootstrap.js"></script>
         <link rel="stylesheet" href="/static/default/css/default.css">
-        <link rel="stylesheet" href="/static/default/css/bootstrap-duration-picker.css">
         <script src="/static/default/js/jquery.min.js"></script>
-        <script src="/static/default/js/template-form.js"></script>
+        <script src="/static/default/js/post-form.js"></script>
         <title>Site</title>
     </head>
     <body>
