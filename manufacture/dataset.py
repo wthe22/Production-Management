@@ -1,7 +1,7 @@
 from models import (
     Item, Recipe, RecipeInput, RecipeOutput, Stock, 
     Machine, MachineRecipe, Task, 
-    Notification
+    User, Notification
     )
 
 
@@ -9,7 +9,7 @@ class Dataset:
     table_list = [
         Item, Recipe, RecipeInput, RecipeOutput, Stock, 
         Machine, MachineRecipe, Task, 
-        Notification
+        User, Notification
     ]
 
     @classmethod
@@ -446,8 +446,7 @@ class TableExplorer(QtWidgets.QWidget):
 
 
 if __name__ == '__main__':
-    use_gui = True
-    use_gui = False
+    use_gui = not True
     
     if use_gui:
         app = QtWidgets.QApplication(sys.argv)
@@ -458,4 +457,8 @@ if __name__ == '__main__':
         db.init('test.sqlite3')
         db.connect()
         db.create_tables(Dataset.table_list)
+        User.create(
+            username = "admin",
+            password = "admin",
+        )
         print(Stock._meta.fields.keys())

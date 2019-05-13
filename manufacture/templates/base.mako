@@ -1,7 +1,6 @@
 <%!
 import datetime
 now = datetime.datetime.today()
-is_authenticated = True
 %>
 
 <!DOCTYPE html>
@@ -22,16 +21,16 @@ is_authenticated = True
         </div>
         <div id="navbar">
             <ul><%block name="navbar">
-            % if is_authenticated:
+            % if view.is_authenticated:
                 <a href="${request.route_url('home')}"><li>HOME</li></a>
                 <a href="${request.route_url('list_items')}"><li>ITEMS & RECIPES</li></a>
                 <a href="${request.route_url('list_stocks')}"><li>INVENTORY</li></a>
                 <a href="${request.route_url('list_machines')}"><li>MACHINES</li></a>
                 <a href="${request.route_url('list_tasks')}"><li>TASK</li></a>
-                <a href="${request.route_url('list_notifications')}"><li>NOTIFICATIONS</li></a>
+                <a href="${request.route_url('show_analyzer')}"><li>ANALYZER</li></a>
                 <a href="/logout/"><li style="float:right;">Logout</li></a>
             % else:
-                <a href="${request.route_url('home')}"><li>HOME</li></a>
+                <a href="${request.route_url('default')}"><li>HOME</li></a>
                 <a href="/login/"><li style="float:right;">Login</li></a>
             % endif
             </%block></ul>

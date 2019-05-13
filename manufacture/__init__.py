@@ -1,5 +1,6 @@
 from pyramid.config import Configurator
 from pyramid.request import Request
+from pyramid.session import SignedCookieSessionFactory
 from .models import db
 
 
@@ -16,10 +17,15 @@ class MyRequest(Request):
 
 
 def main(global_config, **settings):
-    config = Configurator(settings=settings)
+    my_session_factory = SignedCookieSessionFactory('secret_key_here')
+    config = Configurator(
+        settings = settings,
+        session_factory = my_session_factory
+        )
     config.include('pyramid_mako')
     
-    config.add_route('home', '/')
+    config.add_route('default', '/')
+    config.add_route('home', '/home/')
     config.add_route('login', '/login/')
     config.add_route('logout', '/logout/')
     
@@ -51,9 +57,7 @@ def main(global_config, **settings):
     config.add_route('edit_task', '/edit/task/{id}/')
     config.add_route('delete_task', '/delete/task/{id}/')
     
-    config.add_route('list_notifications', '/notifications/')
-    config.add_route('add_notification', '/notification/add/')
-    config.add_route('delete_notification', '/delete/notification/{id}/')
+    config.add_route('show_analyzer', '/analyzer/')
     
     config.add_static_view(name='static', path='static')
     config.add_static_view('deform_static', 'deform:static/')

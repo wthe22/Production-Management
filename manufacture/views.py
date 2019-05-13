@@ -10,16 +10,9 @@ from pyramid.httpexceptions import (
 from .models import (
     Item, Recipe, RecipeInput, RecipeOutput, Stock, 
     Machine, MachineRecipe, Task, 
-    Notification
+    User, Notification
     )
 from .forms import PostForm
-
-
-@view_config(route_name='home', renderer='templates/base.mako')
-def home(request):
-    return {
-        'text': "Welcome to the management site!"
-    }
 
 
 def display_time(seconds, granularity=2):
@@ -34,7 +27,7 @@ def display_time(seconds, granularity=2):
         )
 
     for name, count in intervals:
-        value = seconds // count
+        value = seconds
         if value:
             seconds -= value * count
             if value == 1:
@@ -43,22 +36,91 @@ def display_time(seconds, granularity=2):
     return ', '.join(result[:granularity])
 
 
-class AuthView():
+class BaseView():
     def __init__(self, request):
         self.request = request
 
+    @property
+    def user(self):
+        session = self.request.session
+        if 'user' in session:
+            return session['user']
+        return "Anonymous"
+
+    @property
+    def is_authenticated(self):
+        if 'user' in self.request.session:
+            return True
+        return False
+
+
+class DefaultView(BaseView):
+    @view_config(route_name='default', renderer='templates/base.mako')
+    def default_view(request):
+        return {
+            'text': "Hello world!",
+        }
+
+
+class AuthView(BaseView):
     @view_config(route_name='login', renderer='templates/login.mako')
     def login(self):
-        return {}
-
-    @view_config(route_name='logout', renderer='templates/home.mako')
-    def logout(self):
+        login_form = PostForm(
+            name = 'edit',
+            action = 'submit',
+            components = [
+                {'name': 'username', 'label': "Username", 'type': "text",},
+                {'name': 'password', 'label': "Password", 'type': "password",},
+            ]
+        )
         
-        url = self.request.route_url('home')
+        if 'submit' in self.request.params:
+            form_values = login_form.extract_values(self.request.params)
+            username = form_values['username']
+            password = form_values['password']
+            user = list(User.select().where(User.username == username, User.password == password))
+            if len(user) == 1:
+                self.request.session['user'] = user[0]
+                url = self.request.route_url('home')
+                return HTTPFound(url)
+            return {
+                'login_msg': "Invalid username and password combination",
+                'login_form_schema': login_form.schema(),
+            }
+
+        return {
+            'login_msg': "",
+            'login_form_schema': login_form.schema(),
+        }
+
+    @view_config(route_name='logout', renderer='templates/base.mako')
+    def logout(self):
+        del self.request.session['user']
+        url = self.request.route_url('default')
         return HTTPFound(url)
 
 
-class ModelView():
+class HomeView(BaseView):
+    def delete_notification(self):
+        id = self.request.matchdict['id']
+        try:
+            selected = Notification.get_by_id(id)
+            selected.delete_instance()
+        except Notification.DoesNotExist:
+            print("warning: notification does not exist")
+        return
+
+    @view_config(route_name='home', renderer='templates/home.mako')
+    def list(self):
+        if 'delete_notification' in self.request.params:
+            delete_notification()
+        
+        return {
+            'notification_list': Notification.select().order_by(Notification.time)
+        }
+
+
+class ModelView(BaseView):
     model = None
     
     def form_component(self, name):
@@ -117,9 +179,6 @@ class ModelView():
         }
         return {**components[name], 'name': name}
     
-    def __init__(self, request):
-        self.request = request
-
     def get_or_404(self):
         id = self.request.matchdict['id']
         try:
@@ -365,31 +424,13 @@ class TaskView(ModelView):
         return super(self.__class__, self).delete(success_route='list_tasks')
 
 
-
-class NotificationView(ModelView):
-    model = Notification
-    editable_fields = None
-    
-    @view_config(route_name='list_notifications', renderer='templates/list_notifications.mako')
-    def list(request):
-        return {
-            'notification_list': Notification.select().order_by(Notification.time)
-        }
-
-    @view_config(route_name='add_notification', renderer='templates/show_notifications.mako')
-    def add(sef):
-        Notification.create(
-            time = 14,
-            title = "Smelting for Glass Done",
-        )
+class AnalyzerView(BaseView):
+    @view_config(route_name='show_analyzer', renderer='templates/analyze.mako')
+    def show(self):
         
         return {
-            'notification_list': Notification.select().order_by(Notification.time)
+            'text': "Hello world",
         }
-    
-    @view_config(route_name='delete_notification', renderer='templates/list_notifications.mako')
-    def delete(self):
-        return super(self.__class__, self).delete(success_route='list_notifications')
 
 
 """

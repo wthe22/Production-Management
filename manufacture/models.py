@@ -107,5 +107,5 @@ class Notification(BaseModel):
 
 class User(BaseModel):
     id = AutoField(primary_key=True)
-    username = CharField()
+    username = CharField(unique=True)
     password = CharField()
