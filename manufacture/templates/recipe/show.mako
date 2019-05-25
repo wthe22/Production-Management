@@ -3,8 +3,8 @@
 
 <%block name="content">
 <h2>Recipe for ${recipe.name} (Recipe #${recipe.id})</h2>
-<a href="/edit/recipe/${recipe.id}/">Edit</a>
-<a href="/delete/recipe/${recipe.id}/">Delete</a>
+<a href="${request.route_url('recipe_edit', id=recipe.id)}">Edit</a>
+<a href="${request.route_url('recipe_delete', id=recipe.id)}">Delete</a>
 <br />
 <br />
 <div style="width:100%; height:50%; display: flex;">
@@ -13,7 +13,7 @@
         <table class="striped" style="width:100%;">
             <tr><td>ID</td><td>${recipe.id}</td></tr>
             <tr><td>Name</td><td>${recipe.name}</td></tr>
-            <tr><td>Description</td><td>${recipe.description}</td></tr>
+            <tr><td>Details</td><td>${recipe.details}</td></tr>
             <tr><td>Duration</td><td>${recipe.duration}</td></tr>
         </table>
     </div>
@@ -24,7 +24,7 @@
             <tr><th>Item</th><th>Quantity</th></tr>
             % for recipe_item in recipe_input:
             <tr>
-                <td><a href="/item/${recipe_item.item.id}/">${recipe_item.item.name}</a></td>
+                <td><a href="${request.route_url('item_delete', id=recipe_item.item.id)}">${recipe_item.item.name}</a></td>
                 <td>${recipe_item.quantity}</td>
             </tr>
             % endfor
@@ -37,7 +37,7 @@
             <tr><th>Item</th><th>Quantity</th></tr>
             % for recipe_item in recipe_output:
             <tr>
-                <td><a href="/item/${recipe_item.item.id}/">${recipe_item.item.name}</a></td>
+                <td><a href="${request.route_url('item_delete', id=recipe_item.item.id)}">${recipe_item.item.name}</a></td>
                 <td>${recipe_item.quantity}</td>
             </tr>
             % endfor
@@ -50,7 +50,7 @@
             <tr><th>Machine</th></tr>
             % for machine in machine_list:
             <tr>
-                <td><a href="/machine/${machine.id}/">${machine.name}</a></td>
+                <td><a href="${request.route_url('machine_show', id=machine.id)}">${machine.name}</a></td>
             </tr>
             % endfor
         </table>

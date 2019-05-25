@@ -1,4 +1,5 @@
 from peewee import *
+import datetime
 
 
 db = SqliteDatabase(None)
@@ -13,7 +14,7 @@ class BaseModel(Model):
 class Item(BaseModel):
     id = AutoField(primary_key=True)
     name = CharField(unique=True)
-    description = TextField(null=True)
+    details = TextField(null=True)
 
     def __str__(self):
         return self.name
@@ -22,7 +23,7 @@ class Item(BaseModel):
 class Recipe(BaseModel):
     id = AutoField(primary_key=True)
     name = CharField(unique=True)
-    description = TextField(null=True)
+    details = TextField(null=True)
     duration = IntegerField(default=0, null=True)
 
     def __str__(self):
@@ -56,8 +57,7 @@ class RecipeOutput(BaseModel):
 class Stock(BaseModel):
     id = AutoField(primary_key=True)
     item = ForeignKeyField(Item, on_delete='RESTRICT')
-    comment = CharField()
-    description = TextField(null=True)
+    description = CharField()
     quantity = IntegerField(default=0)
     
     def __str__(self):
@@ -67,11 +67,11 @@ class Stock(BaseModel):
 class Machine(BaseModel):
     id = AutoField(primary_key=True)
     name = CharField(unique=True)
-    description = TextField(null=True)
+    details = TextField(null=True)
     quantity = IntegerField(default=0)
     
     def __str__(self):
-        return "{} {}".format(self.quantity, self.item)
+        return "{}".format(self.name, self.quantity)
 
 
 class MachineRecipe(BaseModel):
@@ -87,25 +87,22 @@ class MachineRecipe(BaseModel):
 
 class Task(BaseModel):
     id = AutoField(primary_key=True)
-    machine = ForeignKeyField(Machine, on_delete='CASCADE')
     recipe = ForeignKeyField(Recipe, on_delete='CASCADE')
-    comment = CharField(null=True)
-    start_time = IntegerField()
-    check_time = IntegerField(default=0)
-    end_time = IntegerField(null=True)
+    cycles = IntegerField()
+    description = TextField()
     
     def __str__(self):
-        return "{} {}".format(self.machine, self.recipe)
+        return "{} x{}".format(self.recipe, self.cycles)
 
 
 class Notification(BaseModel):
     id = AutoField(primary_key=True)
     time = IntegerField()
-    title = CharField()
-    text = TextField(null=True)
+    description = CharField()
+    details = TextField(null=True)
 
-
-class User(BaseModel):
-    id = AutoField(primary_key=True)
-    username = CharField(unique=True)
-    password = CharField()
+    def __str__(self):
+        time = ""
+        if not self.time is None:
+            time = str(datetime.timedelta(seconds=self.time))
+        return "[T+{:0>8}] {}".format(time, self.description)

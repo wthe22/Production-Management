@@ -12,6 +12,7 @@ now = datetime.datetime.today()
         <link rel="stylesheet" href="/static/default/css/default.css">
         <script src="/static/default/js/jquery.min.js"></script>
         <script src="/static/default/js/post-form.js"></script>
+        <!-- Static URL Link: '$ {request.static_url('tutorial:static/app.css')}' -->
         <title>Site</title>
     </head>
     <body>
@@ -23,15 +24,15 @@ now = datetime.datetime.today()
             <ul><%block name="navbar">
             % if view.is_authenticated:
                 <a href="${request.route_url('home')}"><li>HOME</li></a>
-                <a href="${request.route_url('list_items')}"><li>ITEMS & RECIPES</li></a>
-                <a href="${request.route_url('list_stocks')}"><li>INVENTORY</li></a>
-                <a href="${request.route_url('list_machines')}"><li>MACHINES</li></a>
-                <a href="${request.route_url('list_tasks')}"><li>TASK</li></a>
-                <a href="${request.route_url('show_analyzer')}"><li>ANALYZER</li></a>
-                <a href="/logout/"><li style="float:right;">Logout</li></a>
+                <a href="${request.route_url('item_list')}"><li>ITEMS & RECIPES</li></a>
+                <a href="${request.route_url('stock_list')}"><li>INVENTORY</li></a>
+                <a href="${request.route_url('machine_list')}"><li>MACHINES</li></a>
+                <a href="${request.route_url('task_list')}"><li>TASK</li></a>
+                <a href="${request.route_url('analyzer_input')}"><li>ANALYZER</li></a>
+                <a href="${request.route_url('user_logout')}"><li style="float:right;">Logout</li></a>
             % else:
                 <a href="${request.route_url('default')}"><li>HOME</li></a>
-                <a href="/login/"><li style="float:right;">Login</li></a>
+                <a href="${request.route_url('user_login')}"><li style="float:right;">Login</li></a>
             % endif
             </%block></ul>
         </div>

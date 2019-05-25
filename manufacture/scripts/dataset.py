@@ -1,88 +1,65 @@
-from models import (
+import random
+
+from models.management import (
     Item, Recipe, RecipeInput, RecipeOutput, Stock, 
-    Machine, MachineRecipe, Task, 
-    User, Notification
-    )
+    Machine, MachineRecipe, Task, Notification
+)
 
 
 class Dataset:
-    table_list = [
-        Item, Recipe, RecipeInput, RecipeOutput, Stock, 
-        Machine, MachineRecipe, Task, 
-        User, Notification
-    ]
-
-    @classmethod
-    def truncate_db(cls):
-        print("Truncate DB")
-        for model in cls.table_list:
-            model.delete().execute()
-            print("Truncate {}".format(model.__name__))
-        print("Truncate DB done")
-
     @classmethod
     def populate_db(cls):
-        print("Populate DB")
-        
-        with db.atomic():
-            Item.insert_many([[name] for name in cls.item_list], fields=[Item.name]).execute()
-        
-            for duration, out_items, in_items in cls.recipe_list:
-                recipe_name = ""
-                for qty, name in out_items:
-                    recipe_name += "{} {} + ".format(qty, name)
-                recipe_name = recipe_name[:-3]
-                recipe = Recipe(
-                    name = recipe_name,
-                    duration = duration,
-                )
-                recipe.save()
-                for model_class, item_list in [[RecipeInput, in_items], [RecipeOutput, out_items]]:
-                    for qty, name in item_list:
-                        model_class.create(
-                            recipe = recipe.id,
-                            item = Item.get(Item.name == name).id,
-                            quantity = qty,
-                        )
-        
-            Machine.insert_many(cls.machine_list, fields=[Machine.quantity, Machine.name]).execute()
-            
-            for machine, recipe_list in cls.machine_recipe_list:
-                machine = Machine.get(Machine.name == machine)
-                for name in recipe_list:
-                    MachineRecipe.create(
-                        machine = machine.id,
-                        recipe = Recipe.get(Recipe.name == name).id,
+        Item.insert_many([[name] for name in cls.item_list], fields=[Item.name]).execute()
+    
+        for duration, out_items, in_items in cls.recipe_list:
+            recipe_name = ""
+            for qty, name in out_items:
+                recipe_name += "{} {} + ".format(qty, name)
+            recipe_name = recipe_name[:-3]
+            recipe = Recipe(
+                name = recipe_name,
+                duration = duration,
+            )
+            recipe.save()
+            for model_class, item_list in [[RecipeInput, in_items], [RecipeOutput, out_items]]:
+                for qty, name in item_list:
+                    model_class.create(
+                        recipe = recipe.id,
+                        item = Item.get(Item.name == name).id,
+                        quantity = qty,
                     )
+    
+        Machine.insert_many(cls.machine_list, fields=[Machine.quantity, Machine.name]).execute()
         
-        print("Populate DB done")
+        for machine, recipe_list in cls.machine_recipe_list:
+            machine = Machine.get(Machine.name == machine)
+            for name in recipe_list:
+                MachineRecipe.create(
+                    machine = machine.id,
+                    recipe = Recipe.get(Recipe.name == name).id,
+                )
+        
         return True
 
     @classmethod
     def populate_stocks(cls, randomize=True):
-        print("Populate stocks")
-        print("Randomize: {}".format(randomize))
-        
         Stock.delete().execute()
-        
         if randomize:
-            with db.atomic():
-                for item in Item.select().order_by('?')[:20]:
-                    Stock.create(
-                        item_id = item,
-                        description = "Default",
-                        quantity = random.randint(300, 27000),
-                    )
-                return
-        
-        with db.atomic():
-            for qty, name in cls.stock_list:
+            for item in Item.select().order_by('?')[:20]:
                 Stock.create(
-                    item_id = Item.get(Item.name == name).id,
-                    comment = "Default",
-                    quantity = qty,
+                    item_id = item,
+                    description = "Default",
+                    quantity = random.randint(300, 27000),
                 )
-        print("Populate stocks done")
+            return
+        
+        for qty, name in cls.stock_list:
+            Stock.create(
+                item_id = Item.get(Item.name == name).id,
+                comment = "Default",
+                quantity = qty,
+            )
+        return True
 
 
 class DeepTown(Dataset):
@@ -400,65 +377,8 @@ class HayDay(Dataset):
     stock_list = []
 
 
-def get_sample(name):
+def get_dataset(name):
     for dataset in [DeepTown, HayDay]:
         if dataset.__name__.lower() == name.lower():
             return dataset
     return None
-
-
-import sys
-import random
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
-import peewee
-from models import db
-
-
-class TableExplorer(QtWidgets.QWidget):
-    def __init__(self):
-        super(TableExplorer, self).__init__()
-        uic.loadUi('TableExplorer.ui', self)
-
-        self.dataset = DeepTown
-
-        db.init('test.sqlite3')
-        #db.init(':memory:')
-        db.connect()
-        db.create_tables(Dataset.table_list)
-        self.table_selector.addItems([table.__name__ for table in Dataset.table_list])
-        self.table_selector.currentIndexChanged.connect(self.update_data)
-        
-
-        self.data_model = QtGui.QStandardItemModel(self.data_table)
-        self.update_data(0)
-        self.truncate_button.clicked.connect(self.dataset.truncate_db)
-        self.populate_button.clicked.connect(self.dataset.populate_db)
-        self.random_stock_button.clicked.connect(self.dataset.populate_stocks)
-
-    def update_data(self, index):
-        selected_table = Dataset.table_list[index]
-        self.data_model = QtGui.QStandardItemModel(self.data_table)
-        for i, column in enumerate(list(selected_table._meta.fields.keys())):
-            self.data_model.setHorizontalHeaderItem(i, QtGui.QStandardItem(column));
-        for item in selected_table.select().tuples():
-            self.data_model.appendRow([QtGui.QStandardItem(str(data)) for data in item])
-        self.data_table.setModel(self.data_model)
-
-
-if __name__ == '__main__':
-    use_gui = not True
-    
-    if use_gui:
-        app = QtWidgets.QApplication(sys.argv)
-        table_explorer = TableExplorer()
-        table_explorer.show()
-        sys.exit(app.exec_())
-    else:
-        db.init('test.sqlite3')
-        db.connect()
-        db.create_tables(Dataset.table_list)
-        User.create(
-            username = "admin",
-            password = "admin",
-        )
-        print(Stock._meta.fields.keys())

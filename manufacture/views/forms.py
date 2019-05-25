@@ -1,4 +1,5 @@
 import time
+import json
 
 
 class PostForm:
@@ -39,33 +40,8 @@ class PostForm:
             self.components.append(field)
 
     def schema(self):
-        def escape_html(value):
-            return str(value).replace('&', '&amp;').replace('"', '&quot;')
-        components_schema = '\n'
-        for field in self.components:
-            #field['name'] = "{}__{}".format(self.name, field['name'])
-            field_schema = ""
-            for key, value in field.items():
-                str_value = value
-                
-                if value is None:
-                    str_value = "''"
-                
-                if isinstance(value, bool):
-                    str_value = str(str_value).lower()
-                
-                if isinstance(value, list):
-                    str_value = ''
-                    for val, label in value:
-                        str_value += "['{}', '{}'], ".format(escape_html(val), escape_html(label))
-                    str_value = "[{}]".format(str_value[:-2])
-                
-                if isinstance(value, str):
-                    str_value = "'" + escape_html(str_value) + "'"
-                
-                field_schema += "'{}': {}, ".format(key, str_value)
-            components_schema += "{" + field_schema[:-2] + "}, \n"
-        return "'{}', '{}', [{}]".format(self.name, self.action, components_schema)
+        json_schema = [self.name, self.action, self.components]
+        return json.dumps(json_schema, ensure_ascii=False)
 
     def extract_values(self, params):
         values = {}

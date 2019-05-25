@@ -12,7 +12,7 @@
                 <tr>
                     <td>${notification.time}</td>
                     <td>${notification.title}</td>
-                    <td><a href="/delete/notification/${notification.id}">Delete</a></td>
+                    <td><a href="${request.route_url('notification_delete', id=notification.id)}">Delete</a></td>
                 </tr>
             % endfor
         </table>
