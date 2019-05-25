@@ -203,11 +203,17 @@ class TaskManager:
                     time = self.elapsed_time,
                     description = "Done with task{}: {}".format(task_id, self.recipe_tasks[task_id].recipe)
                 )]
+                # ! Move to fast_forward
                 self.active_machines[m].task_id = None
                 self.recipe_tasks[task_id].allocated -= 1
                 self.recipe_tasks[task_id].cycles_remaining -= (self.elapsed_time - machine.start_time) // self.recipe_tasks[task_id].recipe.duration
-            if self.recipe_tasks[task_id].time_remaining == 0:
-                del self.recipe_tasks[task_id]
+        
+        # ! Restructure needed
+        updated_recipe_task = {}
+        for t, task in self.recipe_tasks.items():
+            if not task.time_remaining == 0:
+                updated_recipe_task[t] = task
+        self.recipe_tasks = updated_recipe_task
 
     def calculate_eta(self):
         active_tasks = []
@@ -272,16 +278,25 @@ class TaskManager:
 class AnalyzerView(BaseView):
     @view_config(route_name='analyzer_input', renderer='../templates/analyze/input.mako')
     def show(self):
-    
-        item_machines = {}
+        item_machine_list = []
         for item in Item.select():
-            recipe = [recipe_item.recipe for recipe_item in RecipeOutput.select().where(RecipeOutput.item_id == item.id)]
+            try:
+                recipe = RecipeOutput.get(RecipeOutput.item_id == item.id).recipe
+            except RecipeOutput.DoesNotExist:
+                continue
+            
+            try:
+                machine = MachineRecipe.get(MachineRecipe.recipe_id == recipe.id).machine
+            except MachineRecipe.DoesNotExist:
+                print("warning: recipe '' cannot be produced with any machines".format(recipe.name))
+                continue
+            
+            item_machine_list += [[item.id, machine.id]]
         
         return {
-            'item_list': Item.select().order_by(Item.name),
-            'item_machines': item_machines,
-            'recipe_list': Recipe.select().order_by(Recipe.name),
-            'machine_list': Machine.select().order_by(Machine.name)
+            'item_list': list(Item.select().order_by(Item.name)),
+            'machine_list': list(Machine.select().order_by(Machine.name)),
+            'item_machine_list': item_machine_list,
         }
     
     @view_config(route_name='analyzer_result', renderer='../templates/analyze/result.mako')
@@ -300,14 +315,6 @@ class AnalyzerView(BaseView):
         input_machines = []
         for machine in machine_dict.values():
             input_machines += [[int(value) for value in machine.values()]]
-        
-        print("Input orders:")
-        print(input_orders)
-        print()
-        
-        print("Input machines:")
-        print(input_machines)
-        print()
         
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
@@ -373,6 +380,8 @@ class AnalyzerView(BaseView):
         print()
         print("Time required: {}".format(str(datetime.timedelta(seconds=time_required))))
 
+        sys.stdout = old_stdout
+        
         return {
             'time_required': time_required,
             'test_output': mystdout.getvalue(),

@@ -2,18 +2,27 @@
 
 
 <%block name="content">
-<h2>Analyzer</h2>
+<h2>Analyze Result</h2>
 <br />
 
 Time required: ${time_required}<br />
 <br />
 Machine Sequences:<br />
 % for m, notifications in machine_notifications.items():
-    machine${m}<br />
+machine${m}
+<table class="striped">
+    <tr>
+        <th>Time</th>
+        <th>Description</th>
+    </tr>
     % for notif in notifications:
-        ${notif}<br />
+        <tr>
+            <td>${notif.time}</td>
+            <td>${notif.description}</td>
+        </tr>
     % endfor
-    <br />
+</table>
+<br />
 % endfor
 <br />
 Test Output:<br />
