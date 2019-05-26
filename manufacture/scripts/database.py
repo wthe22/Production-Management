@@ -25,15 +25,12 @@ def input_int():
 
 
 class DatabaseTool:
-    table_list = [
-        management.Item, management.Recipe, management.RecipeInput, management.RecipeOutput, management.Stock, 
-        management.Machine, management.MachineRecipe, management.Task, management.Notification
-    ]
+    table_list = management.get_tables()
     
     def menu(self):
         while(True):
             clear_console()
-            print("1. Truncate DB")
+            print("1. Truncate Management")
             print("2. Populate Management")
             print("3. Populate Auth")
             print()
@@ -41,6 +38,7 @@ class DatabaseTool:
             print()
             print("What do you want to do?")
             user_input = input_int()
+            if user_input == 0: return
             if user_input == 1: self.truncate_db()
             if user_input == 2: self.populate_management()
             if user_input == 3: self.populate_user()

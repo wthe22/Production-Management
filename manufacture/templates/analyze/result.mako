@@ -25,6 +25,12 @@ machine${m}
 <br />
 % endfor
 <br />
+
+<form id="apply_form" action="?" method="post" onsubmit="return true">
+    <button type="submit" name="submit" value="submit">Start</button>
+</form>
+
+<br />
 Test Output:<br />
 <pre>${test_output}</pre><br />
 <br />

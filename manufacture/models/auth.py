@@ -2,7 +2,6 @@ from peewee import *
 
 
 db = SqliteDatabase(None)
-#db.init('test.sqlite3')
 
 
 class User(Model):
@@ -12,3 +11,9 @@ class User(Model):
     
     class Meta:
         database = db
+
+
+def get_tables():
+    return [
+        User,
+    ]

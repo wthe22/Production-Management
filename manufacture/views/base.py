@@ -1,8 +1,16 @@
+from ..models import (
+    auth,
+    management,
+)
+
 
 class BaseView:
     def __init__(self, request):
         self.request = request
-
+    
+    def __del__(self):
+        pass
+    
     @property
     def user(self):
         session = self.request.session

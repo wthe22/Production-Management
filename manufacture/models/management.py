@@ -1,9 +1,9 @@
-from peewee import *
 import datetime
+
+from peewee import *
 
 
 db = SqliteDatabase(None)
-#db.init('test.sqlite3')
 
 
 class BaseModel(Model):
@@ -91,8 +91,42 @@ class Task(BaseModel):
     cycles = IntegerField()
     description = TextField()
     
+    def activate(self):
+        self.cycles_remaining = self.cycles
+        self.time_remaining = self.recipe.duration * self.cycles
+        self.usable_machines = []
+        self.allocated = 0
+    
     def __str__(self):
+        return "{:<24}   x{:<3} | ETA R: {:<5} | Machines: ({}) of {}".format(
+            str(self.recipe),
+            self.cycles_remaining,
+            self.time_remaining,
+            self.allocated,
+            self.usable_machines,
+        )
         return "{} x{}".format(self.recipe, self.cycles)
+
+
+class MachineTask(BaseModel):
+    id = AutoField(primary_key=True)
+    machine = ForeignKeyField(Machine, on_delete='CASCADE')
+    task = ForeignKeyField(Task, on_delete='CASCADE')
+    start_time = IntegerField(null=True)
+    cycles = IntegerField(null=True)
+    
+    def free(self):
+        self.temp_task_id = None
+        self.start_time = None
+        self.cycles = None
+    
+    def __str__(self):
+        return "{}: {} | Start: {} | Cycles: {}".format(
+            self.machine_id,
+            self.temp_task_id,
+            self.start_time,
+            self.cycles,
+        )
 
 
 class Notification(BaseModel):
@@ -106,3 +140,11 @@ class Notification(BaseModel):
         if not self.time is None:
             time = str(datetime.timedelta(seconds=self.time))
         return "[T+{:0>8}] {}".format(time, self.description)
+
+
+def get_tables():
+    return [
+        Item, Recipe, RecipeInput, RecipeOutput, Stock, 
+        Machine, MachineRecipe,
+        Task, Notification,
+    ]

@@ -13,7 +13,7 @@ time_format = "%Y-%m-%d %H:%M"
 <div style="width:100%; height:100%;">
     <div class="horizontal-list">
         <table class="striped" style="width:100%;">
-            <tr><th>ID</th><th>Recipe</th><th>Cycles</th><th>Action</th></tr>
+            <tr><th>ID</th><th>Recipe</th><th>Cycles</th><th>Description</th><th>Action</th></tr>
             % for task in task_list:
                 <tr><td>${task.id}</td>
                 <td><a href="${request.route_url('recipe_show', id=task.recipe_id)}">${task.recipe.name}</a></td>

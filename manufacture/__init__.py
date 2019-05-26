@@ -1,25 +1,23 @@
 from pyramid.config import Configurator
 from pyramid.request import Request
 from pyramid.session import SignedCookieSessionFactory
+
 from .models import (
     auth,
     management,
 )
 
 
-AUTH_DB = 'manufacture/databases/auth.sqlite3'
-MANAGEMENT_DB = 'manufacture/databases/test.sqlite3'
-
-
 class MyRequest(Request):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        auth.db.init(AUTH_DB)
+        auth.db.init('manufacture/databases/auth.sqlite3')
         auth.db.connect()
-        
-        management.db.init(MANAGEMENT_DB)
+    
+        management.db.init('manufacture/databases/test.sqlite3')
         management.db.connect()
+        
         
         self.add_finished_callback(self.finish)
 

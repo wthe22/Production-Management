@@ -150,7 +150,7 @@ class ModelView(BaseView):
 class ItemView(ModelView):
     model = Item
     
-    @view_config(route_name='item_list', renderer='../templates/item/list.mako')
+    @view_config(route_name='item_list', renderer='../templates/management/item_list.mako')
     def list(self):
         recipe_list = Recipe.select().order_by(Recipe.name)
         recipe_count = len(recipe_list)
@@ -172,7 +172,7 @@ class ItemView(ModelView):
             'recipe_full_list': recipe_full_list,
         }
 
-    @view_config(route_name='item_show', renderer='../templates/item/show.mako')
+    @view_config(route_name='item_show', renderer='../templates/management/item_show.mako')
     def show(self):
         item = self.get_or_404()
         
@@ -182,29 +182,29 @@ class ItemView(ModelView):
             'recipe_output': RecipeOutput.select().where(RecipeOutput.item_id == item.id).order_by(RecipeOutput.item.name),
         }
 
-    @view_config(route_name='item_new', renderer='../templates/generic/edit.mako')
+    @view_config(route_name='item_new', renderer='../templates/management/generic_edit.mako')
     def add_new(self):
-        return super(self.__class__, self).add_new(
+        return super().add_new(
             success_route = 'item_list',
             fields = ['name', 'details']
         )
 
-    @view_config(route_name='item_edit', renderer='../templates/generic/edit.mako')
+    @view_config(route_name='item_edit', renderer='../templates/management/generic_edit.mako')
     def edit(self):
-        return super(self.__class__, self).edit(
+        return super().edit(
             success_route = 'item_list',
             fields = ['name', 'details']
         )
 
     @view_config(route_name='item_delete', renderer='../templates/show_item.mako')
     def delete(self):
-        return super(self.__class__, self).delete(success_route='item_list')
+        return super().delete(success_route='item_list')
 
 
 class RecipeView(ModelView):
     model = Recipe
     
-    @view_config(route_name='recipe_show', renderer='../templates/recipe/show.mako')
+    @view_config(route_name='recipe_show', renderer='../templates/management/recipe_show.mako')
     def show(self):
         recipe = self.get_or_404()
         recipe.duration = display_time(recipe.duration)
@@ -215,63 +215,63 @@ class RecipeView(ModelView):
             'machine_list': [machine_recipe.machine for machine_recipe in MachineRecipe.select().where(MachineRecipe.recipe_id == recipe.id).order_by(MachineRecipe.machine.name)],
         }
 
-    @view_config(route_name='recipe_new', renderer='../templates/recipe/edit.mako')
+    @view_config(route_name='recipe_new', renderer='../templates/management/recipe_edit.mako')
     def add_new(self):
-        return super(self.__class__, self).add_new(
+        return super().add_new(
             success_route = 'item_list',
             fields = ['name', 'details', 'duration']
         )
 
-    @view_config(route_name='recipe_edit', renderer='../templates/recipe/edit.mako')
+    @view_config(route_name='recipe_edit', renderer='../templates/management/recipe_edit.mako')
     def edit(self):
-        return super(self.__class__, self).edit(
+        return super().edit(
             success_route = 'item_list',
             fields = ['name', 'details', 'duration']
         )
 
-    @view_config(route_name='recipe_delete', renderer='../templates/recipe/show.mako')
+    @view_config(route_name='recipe_delete', renderer='../templates/management/recipe_show.mako')
     def delete(self):
-        return super(self.__class__, self).delete(success_route='item_list')
+        return super().delete(success_route='item_list')
 
 
 class StockView(ModelView):
     model = Stock
     
-    @view_config(route_name='stock_list', renderer='../templates/stock/list.mako')
+    @view_config(route_name='stock_list', renderer='../templates/management/stock_list.mako')
     def list(request):
         return {
             'stock_list': Stock.select().order_by(Stock.item.name)
         }
 
-    @view_config(route_name='stock_new', renderer='../templates/generic/edit.mako')
+    @view_config(route_name='stock_new', renderer='../templates/management/generic_edit.mako')
     def add_new(self):
-        return super(self.__class__, self).add_new(
+        return super().add_new(
             success_route = 'stock_list',
             fields = ['item_id', 'description', 'details', 'quantity']
         )
 
-    @view_config(route_name='stock_edit', renderer='../templates/generic/edit.mako')
+    @view_config(route_name='stock_edit', renderer='../templates/management/generic_edit.mako')
     def edit(self):
-        return super(self.__class__, self).edit(
+        return super().edit(
             success_route = 'stock_list',
             fields = ['item_id', 'description', 'quantity']
         )
 
-    @view_config(route_name='stock_delete', renderer='../templates/stock/list.mako')
+    @view_config(route_name='stock_delete', renderer='../templates/management/stock_list.mako')
     def delete(self):
-        return super(self.__class__, self).delete(success_route='stock_list')
+        return super().delete(success_route='stock_list')
 
 
 class MachineView(ModelView):
     model = Machine
     
-    @view_config(route_name='machine_list', renderer='../templates/machine/list.mako')
+    @view_config(route_name='machine_list', renderer='../templates/management/machine_list.mako')
     def list(request):
         return {
             'machine_list': Machine.select().order_by(Machine.name)
         }
 
-    @view_config(route_name='machine_show', renderer='../templates/machine/show.mako')
+    @view_config(route_name='machine_show', renderer='../templates/management/machine_show.mako')
     def show(self):
         machine = self.get_or_404()
         return {
@@ -279,51 +279,51 @@ class MachineView(ModelView):
             'recipe_list': [machine_recipe.recipe for machine_recipe in MachineRecipe.select().where(MachineRecipe.machine_id == machine.id).order_by(MachineRecipe.recipe.name)],
         }
 
-    @view_config(route_name='machine_new', renderer='../templates/generic/edit.mako')
+    @view_config(route_name='machine_new', renderer='../templates/management/generic_edit.mako')
     def add_new(self):
-        return super(self.__class__, self).add_new(
+        return super().add_new(
             success_route = 'machine_list',
             fields = ['name', 'details', 'quantity']
         )
 
-    @view_config(route_name='machine_edit', renderer='../templates/generic/edit.mako')
+    @view_config(route_name='machine_edit', renderer='../templates/management/generic_edit.mako')
     def edit(self):
-        return super(self.__class__, self).edit(
+        return super().edit(
             success_route = 'machine_list',
             fields = ['name', 'details', 'quantity']
         )
 
     @view_config(route_name='machine_delete', renderer='../templates/show_machine.mako')
     def delete(self):
-        return super(self.__class__, self).delete(success_route='machine_list')
+        return super().delete(success_route='machine_list')
 
 
 class TaskView(ModelView):
     model = Task
     
-    @view_config(route_name='task_list', renderer='../templates/task/list.mako')
+    @view_config(route_name='task_list', renderer='../templates/management/task_list.mako')
     def list(request):
         return {
             'task_list': Task.select().order_by(Task.recipe.name)
         }
 
-    @view_config(route_name='task_new', renderer='../templates/generic/edit.mako')
+    @view_config(route_name='task_new', renderer='../templates/management/generic_edit.mako')
     def add_new(self):
-        return super(self.__class__, self).add_new(
+        return super().add_new(
             success_route = 'task_list',
             fields = ['machine_id', 'recipe_id', 'description', 'start_time', 'end_time']
         )
 
-    @view_config(route_name='task_edit', renderer='../templates/generic/edit.mako')
+    @view_config(route_name='task_edit', renderer='../templates/management/generic_edit.mako')
     def edit(self):
-        return super(self.__class__, self).edit(
+        return super().edit(
             success_route = 'task_list',
             fields = ['description', 'end_time']
         )
     
-    @view_config(route_name='task_delete', renderer='../templates/task/list.mako')
+    @view_config(route_name='task_delete', renderer='../templates/management/task_list.mako')
     def delete(self):
-        return super(self.__class__, self).delete(success_route='task_list')
+        return super().delete(success_route='task_list')
 
 
 """

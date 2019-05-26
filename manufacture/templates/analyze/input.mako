@@ -5,8 +5,9 @@
 <h2>Analyzer</h2>
 <br />
 <input type="button" onclick="location.href='${request.route_url('analyzer_test')}';" value="Test" /><br />
+<input type="button" onclick="location.href='${request.route_url('analyzer_result')}';" value="Previous Result" /><br />
 <br />
-<form id="analyze_form" action="${request.route_url('analyzer_result')}" method="post" onsubmit="
+<form id="analyze_form" action="?" method="post" onsubmit="
     return (
         order_form.validate()
         && machine_form.validate()
@@ -97,6 +98,9 @@
 <br />
 <button type="submit" name="submit" value="submit">Submit</button>
 </form>
+<br />
+<h2>Message</h2>
+${message}<br />
 <br />
 <br />
 <h2>Producable Items</h2>

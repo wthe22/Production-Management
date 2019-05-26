@@ -6,7 +6,7 @@ from .forms import PostForm
 
 
 class AuthView(BaseView):
-    @view_config(route_name='user_login', renderer='../templates/login.mako')
+    @view_config(route_name='user_login', renderer='../templates/auth/user_login.mako')
     def login(self):
         login_form = PostForm(
             name = 'edit',
