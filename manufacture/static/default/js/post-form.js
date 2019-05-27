@@ -1,31 +1,31 @@
 class EditForm {
     constructor(id, schema) {
         this.id = id;
-        [this.name, this.action, this.fields] = schema
+        [this.name, this.action, this.components] = schema
     }
     
     clear_all() {
-        for (var i = 0; i < this.fields.length; i++) {
-            $(`#${this.id}__${this.fields[i].name}`).val('');
+        for (var i = 0; i < this.components.length; i++) {
+            $(`#${this.id}__${this.components[i].name}`).val('');
         }
     }
     
     validate() {
-        for (var i = 0; i < this.fields.length; i++) {
-            var field = $(`#${this.id}__${this.fields[i].name}`)
-            if (this.fields[i].type == 'datetime')
-                field = $(`#${this.id}__${this.fields[i].name}_iso8601`)
-            if (this.fields[i].required) {
+        for (var i = 0; i < this.components.length; i++) {
+            var field = $(`#${this.id}__${this.components[i].name}`)
+            if (this.components[i].type == 'datetime')
+                field = $(`#${this.id}__${this.components[i].name}_iso8601`)
+            if (this.components[i].required) {
                 var value = field.val()
                 if (value == null || value == '') {
                     field.focus();
-                    alert(`${this.fields[i].label} is empty!`);
+                    alert(`${this.components[i].label} is empty!`);
                     return false;
                 }
             }
-            if (this.fields[i].type == 'datetime') {
+            if (this.components[i].type == 'datetime') {
                 var date = new Date(field.val())
-                $(`#${this.id}__${this.fields[i].name}`).val(date.getTime()/1000)
+                $(`#${this.id}__${this.components[i].name}`).val(date.getTime()/1000)
             }
         }
         return true;
@@ -36,52 +36,52 @@ class EditForm {
         form_html += `<form action="?" method="post" onsubmit="return ${this.id}.validate();">`;
         form_html += "<table>";
         
-        for (var i = 0; i < this.fields.length; i++) {
+        for (var i = 0; i < this.components.length; i++) {
             form_html += "<tr>";
             
             form_html += "<td>";
-            form_html += this.fields[i].label;
-            if (this.fields[i].required)
+            form_html += this.components[i].label;
+            if (this.components[i].required)
                 form_html += ` <span style="color:#F00;">*</span>`;
             form_html += "</td>";
             
             form_html += "<td>";
-            if (this.fields[i].type == "select") {
-                form_html += `<select name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}">`;
+            if (this.components[i].type == "select") {
+                form_html += `<select name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}">`;
                 form_html += `<option value>--- Select ---</option>`;
-                for (var j = 0; j < this.fields[i].options.length; j++) {
-                    let [value, text] = this.fields[i].options[j];
+                for (var j = 0; j < this.components[i].options.length; j++) {
+                    let [value, text] = this.components[i].options[j];
                     form_html += `<option`;
-                    if (value == this.fields[i].value)
+                    if (value == this.components[i].value)
                         form_html += ` selected`;
                     form_html += ` value="${value}">${text}</option>`;
                 }
                 form_html += `</select>`;
             }
-            if (this.fields[i].type == 'textarea') {
+            if (this.components[i].type == 'textarea') {
                 form_html += `<textarea rows="4" cols="50"`
-                form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}" >`;
-                form_html += `${this.fields[i].value}</textarea>`
+                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}" >`;
+                form_html += `${this.components[i].value}</textarea>`
             }
-            if (this.fields[i].type == 'text') {
-                form_html += `<input type="text" value="${this.fields[i].value}" autocomplete="off"`;
-                form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}"/>`;
+            if (this.components[i].type == 'text') {
+                form_html += `<input type="text" value="${this.components[i].value}" autocomplete="off"`;
+                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}"/>`;
             }
-            if (this.fields[i].type == 'password') {
-                form_html += `<input type="password" value="${this.fields[i].value}" autocomplete="off"`;
-                form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}"/>`;
+            if (this.components[i].type == 'password') {
+                form_html += `<input type="password" value="${this.components[i].value}" autocomplete="off"`;
+                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}"/>`;
             }
-            if (this.fields[i].type == 'number') {
-                form_html += `<input type="number" value="${this.fields[i].value}" autocomplete="off"`;
-                form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}"/>`;
+            if (this.components[i].type == 'number') {
+                form_html += `<input type="number" value="${this.components[i].value}" autocomplete="off"`;
+                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}"/>`;
             }
-            if (this.fields[i].type == 'datetime') {
-                var date = new Date(this.fields[i].value * 1000);
+            if (this.components[i].type == 'datetime') {
+                var date = new Date(this.components[i].value * 1000);
                 var local_iso_date = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().substring(0,16);
-                form_html += `<input type="hidden" value="${this.fields[i].value}" autocomplete="off"`;
-                form_html += ` name="${this.name}__${this.fields[i].name}" id="${this.id}__${this.fields[i].name}"/>`;
+                form_html += `<input type="hidden" value="${this.components[i].value}" autocomplete="off"`;
+                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}"/>`;
                 form_html += `<input type="datetime-local" value="${local_iso_date}" autocomplete="off"`;
-                form_html += ` id="${this.id}__${this.fields[i].name}_iso8601"/>`;
+                form_html += ` id="${this.id}__${this.components[i].name}_iso8601"/>`;
             }
             form_html += "</td>";
             

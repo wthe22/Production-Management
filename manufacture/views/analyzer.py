@@ -44,7 +44,7 @@ class TaskManager:
         self.machine_notifications = {}
         self.elapsed_time = 0
 
-    def set_orders(self, input_orders, input_machines, description):
+    def set_tasks(self, input_orders, input_machines, description):
         input_machines_id = [id for id, qty in input_machines]
 
         self.task_list = {}
@@ -89,7 +89,7 @@ class TaskManager:
 
         return self.SUCCESS
 
-    def next_task(self, machine_type):
+    def get_next_task(self, machine_type):
         selected_task = None
         for t, task in self.task_list.items():
             if task.time_remaining == 0:
@@ -112,7 +112,7 @@ class TaskManager:
 
         return selected_task
 
-    def assign_task(self):
+    def assign_tasks(self):
         idle_machines = []
         for i, machine in self.active_machines.items():
             if machine.temp_task_id is None:
@@ -120,7 +120,7 @@ class TaskManager:
 
         for m in idle_machines:
             machine_type = self.active_machines[m].machine_id
-            selected_task = self.next_task(machine_type)
+            selected_task = self.get_next_task(machine_type)
             if selected_task is None:
                 continue
             self.active_machines[m].temp_task_id = selected_task
@@ -240,7 +240,7 @@ class TaskManager:
 
             self.print_tasks("Task List")
             self.print_machines("Machine List")
-            self.assign_task()
+            self.assign_tasks()
             self.update_machine_cycles()
             self.print_machines("Assigned machines")
 
@@ -268,7 +268,7 @@ class TaskManager:
 
 class AnalyzerView(BaseView):
     @view_config(route_name='analyzer_input', renderer='../templates/analyze/input.mako')
-    def show(self):
+    def input(self):
         message = None
         
         if 'submit' in self.request.params:
@@ -284,7 +284,7 @@ class AnalyzerView(BaseView):
                 input_machines += [[int(value) for value in machine.values()]]
             
             taskman = TaskManager()
-            exit_code = taskman.set_orders(input_orders, input_machines, description="Test")
+            exit_code = taskman.set_tasks(input_orders, input_machines, description="Test")
             if exit_code == TaskManager.SUCCESS:
                 self.request.session['analyzer_input_data'] = [input_orders, input_machines]
                 url = self.request.route_url('analyzer_result')
@@ -322,7 +322,7 @@ class AnalyzerView(BaseView):
         
         input_orders, input_machines = self.request.session['analyzer_input_data']
         taskman = TaskManager()
-        exit_code = taskman.set_orders(input_orders, input_machines, description="Test")
+        exit_code = taskman.set_tasks(input_orders, input_machines, description="Test")
         
         if 'submit' in self.request.params:
             taskman.apply_orders()
@@ -377,7 +377,7 @@ class AnalyzerView(BaseView):
             input_machines += [[machine.id, qty]]
 
         taskman = TaskManager()
-        exit_code = taskman.set_orders(input_orders, input_machines, description="Test")
+        exit_code = taskman.set_tasks(input_orders, input_machines, description="Test")
         if exit_code == TaskManager.FAILED:
             print("Set orders failed")
             return

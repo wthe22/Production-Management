@@ -24,7 +24,7 @@ class Recipe(BaseModel):
     id = AutoField(primary_key=True)
     name = CharField(unique=True)
     details = TextField(null=True)
-    duration = IntegerField(default=0, null=True)
+    duration = IntegerField(null=True)
 
     def __str__(self):
         return self.name
@@ -33,7 +33,7 @@ class Recipe(BaseModel):
 class RecipeInput(BaseModel):
     recipe = ForeignKeyField(Recipe, on_delete='CASCADE')
     item = ForeignKeyField(Item, on_delete='RESTRICT')
-    quantity = IntegerField(default=0)
+    quantity = IntegerField()
     
     class Meta:
         primary_key = CompositeKey('recipe', 'item')
@@ -45,7 +45,7 @@ class RecipeInput(BaseModel):
 class RecipeOutput(BaseModel):
     recipe = ForeignKeyField(Recipe, on_delete='CASCADE')
     item = ForeignKeyField(Item, on_delete='RESTRICT')
-    quantity = IntegerField(default=0)
+    quantity = IntegerField()
     
     class Meta:
         primary_key = CompositeKey('recipe', 'item')
@@ -89,7 +89,7 @@ class Task(BaseModel):
     id = AutoField(primary_key=True)
     recipe = ForeignKeyField(Recipe, on_delete='CASCADE')
     cycles = IntegerField()
-    description = TextField()
+    description = CharField()
     
     def activate(self):
         self.cycles_remaining = self.cycles
@@ -111,7 +111,7 @@ class Task(BaseModel):
 class MachineTask(BaseModel):
     id = AutoField(primary_key=True)
     machine = ForeignKeyField(Machine, on_delete='CASCADE')
-    task = ForeignKeyField(Task, on_delete='CASCADE')
+    task = ForeignKeyField(Task, on_delete='CASCADE', null=True)
     start_time = IntegerField(null=True)
     cycles = IntegerField(null=True)
     
