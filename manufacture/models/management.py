@@ -56,8 +56,7 @@ class RecipeOutput(BaseModel):
 
 class Stock(BaseModel):
     id = AutoField(primary_key=True)
-    item = ForeignKeyField(Item, on_delete='RESTRICT')
-    description = CharField()
+    item = ForeignKeyField(Item, on_delete='CASCADE')
     quantity = IntegerField(default=0)
     
     def __str__(self):

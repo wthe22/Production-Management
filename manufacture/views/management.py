@@ -1,37 +1,20 @@
-from datetime import datetime, timedelta
+from datetime import (
+    datetime,
+    timedelta,
+)
 from pyramid.view import view_config
 from pyramid.httpexceptions import (
     HTTPFound,
     exception_response
 )
 
+from ..lib.functions import display_time
 from ..models.management import (
     Item, Recipe, RecipeInput, RecipeOutput, Stock, 
     Machine, MachineRecipe, Task, Notification
 )
 from .base import BaseView
 from .forms import PostForm
-
-
-def display_time(seconds, granularity=2):
-    result = []
-
-    intervals = (
-        ('weeks', 604800),  # 60 * 60 * 24 * 7
-        ('days', 86400),    # 60 * 60 * 24
-        ('hours', 3600),    # 60 * 60
-        ('minutes', 60),
-        ('seconds', 1),
-        )
-
-    for name, count in intervals:
-        value = seconds // count
-        if value:
-            seconds -= value * count
-            if value == 1:
-                name = name.rstrip('s')
-            result.append("{} {}".format(value, name))
-    return ', '.join(result[:granularity])
 
 
 class ModelView(BaseView):
@@ -247,14 +230,14 @@ class StockView(ModelView):
     def add_new(self):
         return super().add_new(
             success_route = 'stock_list',
-            fields = ['item_id', 'description', 'details', 'quantity']
+            fields = ['item_id', 'quantity']
         )
 
     @view_config(route_name='stock_edit', renderer='../templates/management/generic_edit.mako')
     def edit(self):
         return super().edit(
             success_route = 'stock_list',
-            fields = ['item_id', 'description', 'quantity']
+            fields = ['item_id', 'quantity']
         )
 
     @view_config(route_name='stock_delete', renderer='../templates/management/stock_list.mako')

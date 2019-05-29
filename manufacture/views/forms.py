@@ -3,8 +3,8 @@ import json
 
 
 class PostForm:
-    @staticmethod
-    def defaults():
+    @property
+    def defaults(self):
         return {
             'generic': {
                 'name': None,
@@ -33,9 +33,9 @@ class PostForm:
         self.components = []
         for i, parameters in enumerate(components):
             type = parameters['type']
-            field = dict(self.defaults()['generic'])
-            if type in self.defaults():
-                field.update(self.defaults()[type])
+            field = dict(self.defaults['generic'])
+            if type in self.defaults:
+                field.update(self.defaults[type])
             field.update(parameters)
             self.components.append(field)
 

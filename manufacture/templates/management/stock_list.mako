@@ -8,11 +8,10 @@
 <div style="width:100%; height:100%;">
     <div class="horizontal-list">
         <table class="striped" style="width:100%;">
-            <tr><th>ID</th><th>Item</th><th>Description</th><th>Quantity</th><th>Action</th></tr>
+            <tr><th>ID</th><th>Item</th><th>Quantity</th><th>Action</th></tr>
             % for stock in stock_list:
                 <tr><td>${stock.id}</td>
                 <td><a href="${request.route_url('item_show', id=stock.item.id)}">${stock.item.name}</a></td>
-                <td>${stock.description}</td>
                 <td>${stock.quantity}</td>
                 <td>
                     <a href="${request.route_url('stock_edit', id=stock.id)}">Edit</a>

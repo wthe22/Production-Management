@@ -4,9 +4,6 @@
 <%block name="content">
 <h2>Analyzer</h2>
 <br />
-<input type="button" onclick="location.href='${request.route_url('analyzer_test')}';" value="Test" /><br />
-<input type="button" onclick="location.href='${request.route_url('analyzer_result')}';" value="Previous Result" /><br />
-<br />
 <form id="analyze_form" action="?" method="post" onsubmit="
     return (
         order_form.validate()
@@ -24,52 +21,61 @@
         <tr>
             <td>Copper Nail</td>
             <td>150</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="37" name="orders__[0][]">
             <input type="hidden" value="150" name="orders__[0][]">
         </tr>
         <tr>
             <td>Copper Wire</td>
             <td>100</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="38" name="orders__[1][]">
             <input type="hidden" value="50" name="orders__[1][]">
         </tr>
         <tr>
             <td>Battery</td>
             <td>189</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="39" name="orders__[2][]">
             <input type="hidden" value="189" name="orders__[2][]">
         </tr>
         <tr>
             <td>Lamp</td>
             <td>60</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="41" name="orders__[3][]">
             <input type="hidden" value="60" name="orders__[3][]">
         </tr>
         <tr>
             <td>Circuit</td>
             <td>123</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="40" name="orders__[4][]">
             <input type="hidden" value="123" name="orders__[4][]">
         </tr>
         <tr>
             <td>Gunpowder</td>
             <td>20</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="76" name="orders__[5][]">
             <input type="hidden" value="151" name="orders__[5][]">
         </tr>
         <tr>
             <td>Hydrogen</td>
             <td>10</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="67" name="orders__[6][]">
             <input type="hidden" value="10" name="orders__[6][]">
         </tr>
         <tr>
             <td>Clean Water</td>
             <td>7</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="66" name="orders__[7][]">
             <input type="hidden" value="7" name="orders__[7][]">
         </tr>
     </table>
+    <input type="button" value="Add" /><br />
 </div>
 <div class="horizontal-list" style="width:5%;"></div>
 <div class="horizontal-list">
@@ -83,16 +89,19 @@
         <tr>
             <td>Crafting</td>
             <td>4</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="2" name="machines__[0][]">
             <input type="hidden" value="4" name="machines__[0][]">
         </tr>
         <tr>
             <td>Chemistry</td>
             <td>2</td>
+            <td><a href="?">Delete</a></td>
             <input type="hidden" value="3" name="machines__[1][]">
             <input type="hidden" value="2" name="machines__[1][]">
         </tr>
     </table>
+    <input type="button" value="Add" /><br />
 </div>
 <br />
 <br />
@@ -102,6 +111,9 @@
 <h2>Message</h2>
 ${message}<br />
 <br />
+<br />
+<input type="button" onclick="location.href='${request.route_url('analyzer_test')}';" value="Test" /><br />
+<input type="button" onclick="location.href='${request.route_url('analyzer_result')}';" value="Previous Result" /><br />
 <br />
 <h2>Producable Items</h2>
 <table class="striped">
