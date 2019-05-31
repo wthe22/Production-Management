@@ -88,11 +88,12 @@ class Task(BaseModel):
     id = AutoField(primary_key=True)
     recipe = ForeignKeyField(Recipe, on_delete='CASCADE')
     cycles = IntegerField()
+    cycles_remaining = IntegerField()
     description = CharField()
     
     def activate(self):
         self.cycles_remaining = self.cycles
-        self.time_remaining = self.recipe.duration * self.cycles
+        self.time_remaining = self.recipe.duration * self.cycles_remaining
         self.usable_machines = []
         self.allocated = 0
     

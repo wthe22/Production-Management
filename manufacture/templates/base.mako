@@ -13,7 +13,7 @@ now = datetime.datetime.today()
         <script src="/static/default/js/jquery.min.js"></script>
         <script src="/static/default/js/post-form.js"></script>
         <!-- Static URL Link: '$ {request.static_url('tutorial:static/app.css')}' -->
-        <title>Site</title>
+        <title><%block name="title">Site</%block></title>
     </head>
     <body>
         <div id="title">

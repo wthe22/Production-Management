@@ -1,5 +1,7 @@
 import math
 import datetime
+import time
+import copy
 
 from ..models.management import (
     Item, Recipe, RecipeOutput,
@@ -32,9 +34,67 @@ class TaskManager:
     def __init__(self):
         self.active_machines = {}
         self.task_list = {}
-        self.all_notifications = []
-        self.machine_notifications = {}
+        self.master_task_list = {}
+        self.machine_sequences = {}
         self.elapsed_time = 0
+
+    def update_db_tasks(self):
+        self.__init__()
+        
+        for task in Task.select():
+            task.activate()
+            task.usable_machines = []
+            for machine_recipe in MachineRecipe.select().where(MachineRecipe.recipe_id == task.recipe_id):
+                machine = machine_recipe.machine
+                task.usable_machines += [machine.id]
+            self.task_list[task.id] = task
+        
+        min_time = None
+        for machine_task in MachineTask.select():
+            self.active_machines[machine_task.id] = machine_task
+            
+            task_id = machine_task.task_id
+            self.task_list[task_id].allocated += 1
+            
+            if machine_task.start_time is None:
+                continue
+            
+            if min_time is None:
+                min_time = machine_task.start_time
+            if machine_task.start_time < min_time:
+                min_time = machine_task.start_time
+        
+        # EDIT
+            self.task_list[task_id].cycles_remaining -= (self.elapsed_time - machine.start_time) // self.task_list[temp_task_id].recipe.duration
+            #task.cycles_remaining = self.cycles
+            #task.time_remaining = self.recipe.duration * self.cycles
+            #task.allocated = 0
+        
+            for machine_recipe in MachineRecipe.select().where(MachineRecipe.recipe_id == task.recipe_id):
+                machine = machine_recipe.machine
+                task.usable_machines += [machine.id]
+            self.task_list[task.id] = task
+            
+            #task.cycles_remaining = self.cycles
+            #task.time_remaining = self.recipe.duration * self.cycles
+            #task.allocated = 0
+        
+        self.elapsed_time = min_time    
+        target_time = int(time.time())
+        
+        while(self.elapsed_time < target_time):
+            self.assign_tasks()
+            self.update_machine_cycles()
+            fast_forward_sec = self.lowest_machine_eta()
+            catchup_time = target_time - self.elapsed_time
+            if fast_forward_sec > catchup_time:
+                fast_forward_sec = catchup_time
+            
+            self.fast_forward(fast_forward_sec)
+            
+            self.free_machines()
+
+        return self.SUCCESS
 
     def set_tasks(self, input_orders, input_machines, description):
         input_machines_id = [id for id, qty in input_machines]
@@ -69,6 +129,8 @@ class TaskManager:
             task.usable_machines = usable_machines
             self.task_list[id] = task
         
+        self.master_task_list = self.task_list.copy()
+        
         self.active_machines = {}
         for machine, qty in input_machines:
             machine = Machine.get(Machine.id == machine)
@@ -77,8 +139,8 @@ class TaskManager:
                 machine_task = MachineTask(machine=machine)
                 machine_task.free()
                 self.active_machines[id] = machine_task
-                self.machine_notifications[id] = []
-
+                self.machine_sequences[id] = []
+        
         return self.SUCCESS
 
     def get_next_task(self, machine_type):
@@ -118,15 +180,6 @@ class TaskManager:
             self.active_machines[m].temp_task_id = selected_task
             self.active_machines[m].start_time = self.elapsed_time
             self.task_list[selected_task].allocated += 1
-            
-            self.all_notifications += [Notification(
-                time = self.elapsed_time,
-                description = "machine{}: Started with task{}: {}".format(m, selected_task, self.task_list[selected_task].recipe)
-            )]
-            self.machine_notifications[m] += [Notification(
-                time = self.elapsed_time,
-                description = "Started with task{}: {}".format(selected_task, self.task_list[selected_task].recipe)
-            )]
     
     def update_machine_cycles(self):
         active_tasks = []
@@ -203,14 +256,7 @@ class TaskManager:
             eta = machine.cycles - (self.elapsed_time - machine.start_time) / task.recipe.duration
 
             if eta == 0:
-                self.all_notifications += [Notification(
-                    time = self.elapsed_time,
-                    description = "machine{}: Done with task{}: {}".format(m, temp_task_id, self.task_list[temp_task_id].recipe)
-                )]
-                self.machine_notifications[m] += [Notification(
-                    time = self.elapsed_time,
-                    description = "Done with task{}: {}".format(temp_task_id, self.task_list[temp_task_id].recipe)
-                )]
+                self.machine_sequences[m] += [copy.deepcopy(machine)]
                 # ! Move to fast_forward?
                 self.task_list[temp_task_id].allocated -= 1
                 self.task_list[temp_task_id].cycles_remaining -= (self.elapsed_time - machine.start_time) // self.task_list[temp_task_id].recipe.duration
@@ -241,8 +287,66 @@ class TaskManager:
             
             self.fast_forward(lowest_eta)
             self.free_machines()
-
-        return self.elapsed_time, self.machine_notifications
+        
+        print(self.machine_sequences)
+        return self.elapsed_time, self.machine_sequences
+    
+    def sequence2notif(self, machine_sequences):
+        notif_sequences = {}
+        for m in machine_sequences.keys():
+            notif_sequences[m] = []
+        
+        for m, machine_task_sequence in machine_sequences.items():
+            for machine_task in machine_task_sequence:
+                temp_task_id = machine_task.temp_task_id
+                
+                notif_sequences[m] += [Notification(
+                    time = machine_task.start_time,
+                    description = "Start task{}: {} (x{})".format(
+                        temp_task_id,
+                        self.master_task_list[temp_task_id].recipe,
+                        machine_task.cycles,
+                    )
+                )]
+            
+            machine_task = machine_task_sequence[-1]
+            task = self.master_task_list[machine_task.temp_task_id]
+            end_time = machine_task.start_time + task.recipe.duration * machine_task.cycles
+            
+            notif_sequences[m] += [Notification(
+                time = end_time,
+                description = "Stop machine"
+            )]
+        
+        return notif_sequences
+    
+    def sequence2log(self, machine_sequences):
+        all_notifs = []
+        for m, machine_task_sequence in machine_sequences.items():
+            for machine_task in machine_task_sequence:
+                machine = machine_task.machine
+                temp_task_id = machine_task.temp_task_id
+                task = self.master_task_list[temp_task_id]
+                end_time = machine_task.start_time + task.recipe.duration * machine_task.cycles
+                
+                machine_name = "{} (#{})".format(machine_task.machine, m)
+                task_name = "task{}: {} (x{})".format(
+                    temp_task_id,
+                    self.master_task_list[temp_task_id].recipe,
+                    machine_task.cycles,
+                )
+                all_notifs += [Notification(
+                    time = machine_task.start_time,
+                    description = "{}: Started with {}".format(machine_name, task_name),
+                )]
+                all_notifs += [Notification(
+                    time = end_time,
+                    description = "{}: Done with {}".format(machine_name, task_name),
+                )]
+        
+        all_notifs = sorted(all_notifs, key = lambda notif: notif.time)
+        
+        return all_notifs
     
     def apply_orders(self):
         for t in self.task_list.keys():

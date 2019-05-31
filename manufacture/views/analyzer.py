@@ -75,8 +75,9 @@ class AnalyzerView(BaseView):
         
         if 'submit' in self.request.params:
             taskman.apply_orders()
+            url = self.request.route_url('task_list')
+            return HTTPFound(url)
         
-        task_list = taskman.task_list
         machine_list = taskman.active_machines
         
         old_stdout = sys.stdout
@@ -84,7 +85,7 @@ class AnalyzerView(BaseView):
         
         print("Analyze result:")
         print()
-        time_required, machine_notifications = taskman.calculate_sequence()
+        time_required, machine_sequences = taskman.calculate_sequence()
         print()
         
         print("Time required: {}".format(str(datetime.timedelta(seconds=time_required))))
@@ -94,9 +95,10 @@ class AnalyzerView(BaseView):
         return {
             'time_required': display_time(time_required),
             'test_output': mystdout.getvalue(),
-            'task_list': task_list,
+            'task_list': taskman.master_task_list,
             'machine_list': machine_list,
-            'machine_notifications': machine_notifications,
+            'machine_sequences': taskman.sequence2notif(machine_sequences),
+            'all_notifications': taskman.sequence2log(machine_sequences),
         }
     
     @view_config(route_name='analyzer_test', renderer='../templates/analyze/result.mako')

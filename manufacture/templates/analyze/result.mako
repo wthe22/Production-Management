@@ -25,7 +25,7 @@ Time required: ${time_required}<br />
 <br />
 
 <h2>Machine Sequences</h2>
-% for m, notifications in machine_notifications.items():
+% for m, notifications in machine_sequences.items():
 <div class="horizontal-list">
     <h3>${machine_list[m].machine} (#${m})</h3>
     <table class="striped">
@@ -49,8 +49,22 @@ Time required: ${time_required}<br />
 <form id="apply_form" action="?" method="post" onsubmit="return true">
     <button type="submit" name="submit" value="submit">Start</button>
 </form>
-
 <br />
+
+<table class="striped">
+    <tr>
+        <th>Time</th>
+        <th>Description</th>
+    </tr>
+    % for notif in all_notifications:
+        <tr>
+            <td>${notif.time}</td>
+            <td>${notif.description}</td>
+        </tr>
+    % endfor
+</table>
+<br />
+
 Test Output:<br />
 <pre>${test_output}</pre><br />
 <br />
