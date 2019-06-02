@@ -1,7 +1,8 @@
-from .base import BaseView
 from pyramid.view import view_config
+
 from ..models import management
 from ..models.management import Notification
+from .base import BaseView
 
 
 class DefaultView(BaseView):

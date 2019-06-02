@@ -1,7 +1,83 @@
+class Component {
+    static html_code(attributes) {
+        var html_code = "";
+        
+        var generic_attributes = `` + 
+            ` name="${attributes.name}"` +
+            ` id="${attributes.id}"`;
+        if (attributes.type == "select") {
+            html_code += `<select ${generic_attributes}>`;
+            html_code += `<option value>--- Select ---</option>`;
+            for (var j = 0; j < attributes.options.length; j++) {
+                let [value, text] = attributes.options[j];
+                html_code += `<option`;
+                if (value == attributes.value)
+                    html_code += ` selected`;
+                html_code += ` value="${value}">${text}</option>`;
+            }
+            html_code += `</select>`;
+        }
+        if (attributes.type == 'textarea') {
+            html_code += `<textarea` +
+                ` rows="4" cols="50"` +
+                ` ${generic_attributes}"` +
+                ` >` +
+                `${attributes.value}` +
+                `</textarea>`;
+        }
+        if (attributes.type == 'text') {
+            html_code += `<input` +
+                ` type="text"` +
+                ` value="${attributes.value}"` +
+                ` autocomplete="off"` +
+                ` ${generic_attributes}` +
+                ` />`;
+        }
+        if (attributes.type == 'password') {
+            html_code += `<input` +
+                ` type="password"` +
+                ` autocomplete="off"` +
+                ` ${generic_attributes}` +
+                ` />`;
+        }
+        if (attributes.type == 'number') {
+            html_code += `<input` +
+                ` type="number"` +
+                ` value="${attributes.value}"` +
+                ` autocomplete="off"` +
+                ` ${generic_attributes}` +
+                ` />`;
+            // Include min/max
+        }
+        if (attributes.type == 'datetime') {
+            html_code += `<input` +
+                ` type="hidden"` +
+                ` value="${attributes.value}"` +
+                ` ${generic_attributes}` +
+                ` />`;
+            
+            var date = new Date(attributes.value * 1000);
+            var local_iso_date = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().substring(0,16);
+            html_code += `<input` +
+                ` type="datetime-local"` +
+                ` value="${local_iso_date}"` +
+                ` autocomplete="off"` +
+                ` id="${attributes.id}_iso8601"` +
+                ` />`;
+        }
+        return html_code;
+    }
+}
+
+
 class EditForm {
-    constructor(id, schema) {
+    constructor({varname, form, id, name, components}) {
+        this.varname = varname;
+        this.form = form;
         this.id = id;
-        [this.name, this.action, this.components] = schema
+        this.name = name;
+        this.components = components;
+        console.log(this.components)
     }
     
     clear_all() {
@@ -12,12 +88,13 @@ class EditForm {
     
     validate() {
         for (var i = 0; i < this.components.length; i++) {
-            var field = $(`#${this.id}__${this.components[i].name}`)
+            var field = $(`#${this.id}__${this.components[i].name}`);
             if (this.components[i].type == 'datetime')
                 field = $(`#${this.id}__${this.components[i].name}_iso8601`)
             if (this.components[i].required) {
                 var value = field.val()
                 if (value == null || value == '') {
+                    console.log("EMPTY!")
                     field.focus();
                     alert(`${this.components[i].label} is empty!`);
                     return false;
@@ -33,73 +110,34 @@ class EditForm {
     
     load() {
         var form_html = "";
-        form_html += `<form action="?" method="post" onsubmit="return ${this.id}.validate();">`;
-        form_html += "<table>";
-        
         for (var i = 0; i < this.components.length; i++) {
-            form_html += "<tr>";
-            
-            form_html += "<td>";
-            form_html += this.components[i].label;
+            var label_html = this.components[i].label;
             if (this.components[i].required)
-                form_html += ` <span style="color:#F00;">*</span>`;
-            form_html += "</td>";
+                label_html += ` <span style="color:#F00;">*</span>`;
             
-            form_html += "<td>";
-            if (this.components[i].type == "select") {
-                form_html += `<select name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}">`;
-                form_html += `<option value>--- Select ---</option>`;
-                for (var j = 0; j < this.components[i].options.length; j++) {
-                    let [value, text] = this.components[i].options[j];
-                    form_html += `<option`;
-                    if (value == this.components[i].value)
-                        form_html += ` selected`;
-                    form_html += ` value="${value}">${text}</option>`;
-                }
-                form_html += `</select>`;
-            }
-            if (this.components[i].type == 'textarea') {
-                form_html += `<textarea rows="4" cols="50"`
-                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}" >`;
-                form_html += `${this.components[i].value}</textarea>`
-            }
-            if (this.components[i].type == 'text') {
-                form_html += `<input type="text" value="${this.components[i].value}" autocomplete="off"`;
-                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}"/>`;
-            }
-            if (this.components[i].type == 'password') {
-                form_html += `<input type="password" value="${this.components[i].value}" autocomplete="off"`;
-                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}"/>`;
-            }
-            if (this.components[i].type == 'number') {
-                form_html += `<input type="number" value="${this.components[i].value}" autocomplete="off"`;
-                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}"/>`;
-            }
-            if (this.components[i].type == 'datetime') {
-                var date = new Date(this.components[i].value * 1000);
-                var local_iso_date = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().substring(0,16);
-                form_html += `<input type="hidden" value="${this.components[i].value}" autocomplete="off"`;
-                form_html += ` name="${this.name}__${this.components[i].name}" id="${this.id}__${this.components[i].name}"/>`;
-                form_html += `<input type="datetime-local" value="${local_iso_date}" autocomplete="off"`;
-                form_html += ` id="${this.id}__${this.components[i].name}_iso8601"/>`;
-            }
-            form_html += "</td>";
+            var attributes = {...this.components[i]};
+            attributes.id = `${this.id}__${this.components[i].name}`;
+            attributes.name = `${this.name}__${this.components[i].name}`;
+            var component_html = Component.html_code(attributes);
             
-            form_html += "</tr>";
+            form_html += `<tr><td>${label_html}</td><td>${component_html}</td></tr>`;
         }
-        form_html += "</table>";
-        form_html += "<br />";
-        form_html += `<button type="submit" name="${this.action}" value="submit">Submit</button>`;
-        form_html += "</form>";
+        form_html = `<table>${form_html}</table><br />`
         $(`#${this.id}`).append(form_html);
+        
+        // ! Add event listener to onsubmit
+        //$(`#${this.form}`).on('submit', this.validate);
     }
 }
 
 
 class ArrayForm {
-    constructor(form, name) {
+    constructor({varname, form, id, name, components}) {
+        this.varname = varname;
         this.form = form;
+        this.id = id;
         this.name = name;
+        this.components = components;
     }
     
     deduce_value(prefix) {
@@ -129,9 +167,45 @@ class ArrayForm {
     
     validate() {
         var json_data = JSON.stringify(this.deduce_value(`${this.name}__`));
-        console.log(json_data);
-        
         $(`#${this.name}`).val(json_data);
         return true;
     }
+    
+    add_row(overrides=[]) {
+        var index = this.rows_added;
+        var row_html = "";
+        for (var i = 0; i < this.components.length; i++) {
+            var attributes = {...this.components[i], ...overrides[i]};
+            attributes.id = `${this.id}__[${index}][${this.components[i].name}]`;
+            attributes.name = `${this.name}__[${index}][${this.components[i].name}]`;
+            var component_html = Component.html_code(attributes);
+            row_html += `<td>${component_html}</td>`;
+        }
+        row_html = `<tr id="${this.id}__table_row${index}">` +
+            `${row_html}` +
+            `<td><button onclick="${this.varname}.remove_row(${index});" type="button">Delete</button></td>` +
+            `</tr>`;
+        
+        $(`#${this.id}__table`).append(row_html);
+        this.rows_added += 1;
+    }
+    
+    remove_row(index) {
+        $(`#${this.id}__table_row${index}`).remove();
+    }
+    
+    load() {
+        this.rows_added = 0;
+        var table_header = ``;
+        for (var i = 0; i < this.components.length; i++) {
+            table_header += `<td>${this.components[i].description}</td>`;
+        }
+        table_header = `<tr>${table_header}</tr>`;
+        var form_html = `<input type="hidden" value="" id="${this.name}" name="${this.name}">` +
+            `<table class="striped" id="${this.id}__table">${table_header}</table>` +
+            `<button onclick="${this.varname}.add_row();" type="button">Add</button>`;
+        $(`#${this.id}`).append(form_html);
+    }
 }
+
+// ! Name and ID name analysis required

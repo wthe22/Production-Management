@@ -65,9 +65,6 @@ Time required: ${time_required}<br />
 </table>
 <br />
 
-Test Output:<br />
-<pre>${test_output}</pre><br />
-<br />
 <script type="text/javascript">
 
 </script>

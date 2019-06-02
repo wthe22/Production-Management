@@ -20,7 +20,6 @@ class BaseView:
 
     @property
     def is_authenticated(self):
-        #return True
         if 'user' in self.request.session:
             return True
         return False

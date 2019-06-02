@@ -1,9 +1,9 @@
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 
+from ..lib.forms import PostForm
 from ..models.auth import User
 from .base import BaseView
-from .forms import PostForm
 
 
 class AuthView(BaseView):

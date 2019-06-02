@@ -89,7 +89,7 @@ class Task(BaseModel):
     recipe = ForeignKeyField(Recipe, on_delete='CASCADE')
     cycles = IntegerField()
     cycles_remaining = IntegerField()
-    description = CharField()
+    description = CharField(null=True)
     
     def activate(self):
         self.cycles_remaining = self.cycles

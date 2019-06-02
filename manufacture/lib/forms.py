@@ -27,9 +27,8 @@ class PostForm:
             },
         }
 
-    def __init__(self, name, components, action="submit"):
+    def __init__(self, name, components):
         self.name = name
-        self.action = action
         self.components = []
         for i, parameters in enumerate(components):
             type = parameters['type']
@@ -40,8 +39,10 @@ class PostForm:
             self.components.append(field)
 
     def schema(self):
-        json_schema = [self.name, self.action, self.components]
-        return json.dumps(json_schema, ensure_ascii=False)
+        return json.dumps({
+            'name': self.name,
+            'components': self.components
+        }, ensure_ascii=False)
 
     def extract_values(self, params):
         values = {}

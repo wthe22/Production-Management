@@ -1,20 +1,18 @@
-from datetime import (
-    datetime,
-    timedelta,
-)
+import json
+
 from pyramid.view import view_config
 from pyramid.httpexceptions import (
     HTTPFound,
     exception_response
 )
 
+from ..lib.forms import PostForm
 from ..lib.functions import display_time
 from ..models.management import (
     Item, Recipe, RecipeInput, RecipeOutput, Stock, 
     Machine, MachineRecipe, Task, Notification
 )
 from .base import BaseView
-from .forms import PostForm
 
 
 class ModelView(BaseView):
@@ -69,9 +67,10 @@ class ModelView(BaseView):
                 'type': "datetime",
                 'required': True,
             },
-            'end_time': {
-                'label': "End Time",
-                'type': "datetime",
+            'cycles': {
+                'label': "Cycles",
+                'type': "number",
+                'required': True,
             },
         }
         return {**components[name], 'name': name}
@@ -86,7 +85,6 @@ class ModelView(BaseView):
     def add_new(self, success_route, fields):
         edit_form = PostForm(
             name = 'edit',
-            action = 'submit',
             components = [self.form_component(field) for field in fields],
         )
         
@@ -106,7 +104,6 @@ class ModelView(BaseView):
         
         edit_form = PostForm(
             name = 'edit',
-            action = 'submit',
             components = [{**self.form_component(field), 'value': getattr(selected, field)} for field in fields],
         )
         
@@ -200,17 +197,88 @@ class RecipeView(ModelView):
 
     @view_config(route_name='recipe_new', renderer='../templates/management/recipe_edit.mako')
     def add_new(self):
-        return super().add_new(
-            success_route = 'item_list',
-            fields = ['name', 'details', 'duration']
-        )
+        return {
+            **super().add_new(
+                success_route = 'item_list',
+                fields = ['name', 'details', 'duration']
+            ),
+            'item_options': json.dumps([[item.id, item.name] for item in Item.select().order_by(Item.name)], ensure_ascii=False),
+            'recipe_input': [],
+            'recipe_output': [],
+        }
+            
 
     @view_config(route_name='recipe_edit', renderer='../templates/management/recipe_edit.mako')
     def edit(self):
-        return super().edit(
-            success_route = 'item_list',
-            fields = ['name', 'details', 'duration']
+        success_route = 'item_list'
+        fields = ['name', 'details', 'duration']
+        
+        recipe = self.get_or_404()
+        
+        edit_form = PostForm(
+            name = 'edit',
+            components = [{**self.form_component(field), 'value': getattr(recipe, field)} for field in fields],
         )
+        
+        if 'submit' in self.request.params:
+            form_values = edit_form.extract_values(self.request.params)
+            for key, value in form_values.items():
+                setattr(recipe, key, value)
+            recipe.save()
+
+            recipe_input_list = json.loads(self.request.params.get('recipe_inputs')).values()
+            recipe_output_list = json.loads(self.request.params.get('recipe_outputs')).values()
+            
+            recipe_inputs = []
+            for item in recipe_input_list:
+                item_id, qty = item.values()
+                if item_id == '':
+                    continue
+                qty = int(qty)
+                if qty == 0:
+                    continue
+                recipe_inputs += [[int(value) for value in item.values()]]
+            
+            recipe_outputs = []
+            for item in recipe_output_list:
+                item_id, qty = item.values()
+                if item_id == '':
+                    continue
+                qty = int(qty)
+                if qty == 0:
+                    continue
+                recipe_outputs += [[int(value) for value in item.values()]]
+            
+            print("Processed List")
+            print(recipe_inputs)
+            print(recipe_outputs)
+            
+            RecipeInput.delete().where(RecipeInput.recipe_id == recipe.id).execute()
+            for item_id, qty in recipe_inputs:
+                RecipeInput.create(
+                    item_id = item_id,
+                    recipe_id = recipe.id,
+                    quantity = qty,
+                )
+            
+            RecipeOutput.delete().where(RecipeOutput.recipe_id == recipe.id).execute()
+            for item_id, qty in recipe_outputs:
+                RecipeOutput.create(
+                    item_id = item_id,
+                    recipe_id = recipe.id,
+                    quantity = qty,
+                )
+            
+            #url = self.request.route_url(success_route)
+            #return HTTPFound(url)
+        
+        return {
+            'heading': "Edit {}".format(self.model.__name__),
+            'edit_form_schema': edit_form.schema(),
+            'item_options': json.dumps([[item.id, item.name] for item in Item.select().order_by(Item.name)], ensure_ascii=False),
+            'recipe_input': RecipeInput.select().where(RecipeInput.recipe_id == recipe.id).order_by(RecipeInput.item.name),
+            'recipe_output': RecipeOutput.select().where(RecipeOutput.recipe_id == recipe.id).order_by(RecipeOutput.item.name),
+        }
 
     @view_config(route_name='recipe_delete', renderer='../templates/management/recipe_show.mako')
     def delete(self):
@@ -294,7 +362,7 @@ class TaskView(ModelView):
     def add_new(self):
         return super().add_new(
             success_route = 'task_list',
-            fields = ['machine_id', 'recipe_id', 'description', 'start_time', 'end_time']
+            fields = ['recipe_id', 'cycles', 'description']
         )
 
     @view_config(route_name='task_edit', renderer='../templates/management/generic_edit.mako')

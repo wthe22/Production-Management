@@ -16,20 +16,32 @@ from .base import BaseView
 
 
 class AnalyzerView(BaseView):
+    @property
+    def has_previous_result(self):
+        if 'analyzer_input_data' in self.request.session:
+            return True
+        return False
+    
     @view_config(route_name='analyzer_input', renderer='../templates/analyze/input.mako')
     def input(self):
         message = None
         
         if 'submit' in self.request.params:
-            order_dict = json.loads(self.request.params.get('orders'))
-            machine_dict = json.loads(self.request.params.get('machines'))
+            order_list = json.loads(self.request.params.get('orders')).values()
+            machine_list = json.loads(self.request.params.get('machines')).values()
             
             input_orders = []
-            for order in order_dict.values():
+            for order in order_list:
+                item_id, qty = order.values()
+                if item_id == '':
+                    continue
                 input_orders += [[int(value) for value in order.values()]]
             
             input_machines = []
-            for machine in machine_dict.values():
+            for machine in machine_list:
+                machine_id, qty = machine.values()
+                if machine_id == '':
+                    continue
                 input_machines += [[int(value) for value in machine.values()]]
             
             taskman = TaskManager()
@@ -58,7 +70,8 @@ class AnalyzerView(BaseView):
         
         return {
             'item_list': list(Item.select().order_by(Item.name)),
-            'machine_list': list(Machine.select().order_by(Machine.name)),
+            'item_options': json.dumps([[item.id, item.name] for item in Item.select().order_by(Item.name)], ensure_ascii=False),
+            'machine_options': json.dumps([[machine.id, machine.name] for machine in Machine.select().order_by(Machine.name)], ensure_ascii=False),
             'item_machine_list': item_machine_list,
             'message': message,
         }
@@ -91,10 +104,10 @@ class AnalyzerView(BaseView):
         print("Time required: {}".format(str(datetime.timedelta(seconds=time_required))))
         
         sys.stdout = old_stdout
+        test_output = mystdout.getvalue()
         
         return {
             'time_required': display_time(time_required),
-            'test_output': mystdout.getvalue(),
             'task_list': taskman.master_task_list,
             'machine_list': machine_list,
             'machine_sequences': taskman.sequence2notif(machine_sequences),
