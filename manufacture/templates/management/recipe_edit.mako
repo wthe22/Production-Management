@@ -11,19 +11,19 @@
         && recipe_output_form.validate()
     );
 ">
-<div class="horizontal-list" id="model_edit"></div><br />
-<div class="horizontal-list">
-    <h3>Input items</h3>
-    <div id="recipe_input_list"></div>
-</div>
-<div class="horizontal-list" style="width:5%;"></div>
-<div class="horizontal-list">
-    <h3>Output items</h3>
-    <div class="horizontal-list" id="recipe_output_list"></div>
-</div>
-<br />
-<br />
-<button type="submit" name="submit" value="submit">Submit</button>
+    <div class="horizontal-list" id="model_edit"></div><br />
+    <div class="horizontal-list">
+        <h3>Input items</h3>
+        <div id="recipe_input_list"></div>
+    </div>
+    <div class="horizontal-list" style="width:5%;"></div>
+    <div class="horizontal-list">
+        <h3>Output items</h3>
+        <div class="horizontal-list" id="recipe_output_list"></div>
+    </div>
+    <br />
+    <br />
+    <button type="submit" name="submit" value="submit">Submit</button>
 </form>
 
 <script type="text/javascript">

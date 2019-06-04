@@ -91,8 +91,11 @@ class Task(BaseModel):
     cycles_remaining = IntegerField()
     description = CharField(null=True)
     
-    def activate(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.cycles_remaining = self.cycles
+    
+    def activate(self):
         self.time_remaining = self.recipe.duration * self.cycles_remaining
         self.usable_machines = []
         self.allocated = 0
@@ -146,5 +149,5 @@ def get_tables():
     return [
         Item, Recipe, RecipeInput, RecipeOutput, Stock, 
         Machine, MachineRecipe,
-        Task, Notification,
+        MachineTask, Task, Notification,
     ]

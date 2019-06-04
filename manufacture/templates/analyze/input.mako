@@ -10,12 +10,18 @@
         && machine_form.validate()
     );
 ">
-<div class="horizontal-list" id="order_list"></div>
-<div class="horizontal-list" style="width:5%;"></div>
-<div class="horizontal-list" id="machine_list"></div>
-<br />
-<br />
-<button type="submit" name="submit" value="submit">Submit</button>
+    <div class="horizontal-list">
+        <h3>Item Orders</h3>
+        <div id="order_list"></div>
+    </div>
+    <div class="horizontal-list" style="width:5%;"></div>
+    <div class="horizontal-list">
+        <h3>Allocated Machines</h3>
+        <div id="machine_list"></div>
+    </div>
+    <br />
+    <br />
+    <button type="submit" name="submit" value="submit">Calculate sequence</button>
 </form>
 <br />
 <br />
@@ -25,11 +31,11 @@ ${message}<br />
 <br />
 % endif
 
-<input type="button" onclick="location.href='${request.route_url('analyzer_test')}';" value="Test" /><br />
 % if view.has_previous_result:
     <input type="button" onclick="location.href='${request.route_url('analyzer_result')}';" value="Previous Result" /><br />
 % endif
-
+<br />
+<input type="button" onclick="location.href='${request.route_url('analyzer_test')}';" value="Test" /><br />
 
 <script type="text/javascript">
 var debug = true
@@ -41,7 +47,7 @@ order_form = new ArrayForm({
     "components": [
         {
             "name": "",
-            "description": "Machine",
+            "description": "Item",
             "type": "select",
             "options": ${str(item_options) | n},
         },

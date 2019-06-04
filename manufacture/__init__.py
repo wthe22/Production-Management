@@ -36,8 +36,7 @@ def main(global_config, **settings):
     config.set_request_factory(MyRequest)
     config.include('pyramid_mako')
     
-    config.add_route('default', '/')
-    config.add_route('home', '/home/')
+    config.add_route('home', '/')
     config.add_route('user_login', '/login/')
     config.add_route('user_logout', '/logout/')
     
@@ -67,6 +66,7 @@ def main(global_config, **settings):
     config.add_route('task_new', '/new/task/')
     config.add_route('task_edit', '/edit/task/{id}/')
     config.add_route('task_delete', '/delete/task/{id}/')
+    config.add_route('machine_task_delete', '/delete/task_machine/{id}/')
     
     config.add_route('notification_delete', '/delete/notification/{id}/')
     

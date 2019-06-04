@@ -11,7 +11,6 @@ class AuthView(BaseView):
     def login(self):
         login_form = PostForm(
             name = 'edit',
-            action = 'submit',
             components = [
                 {'name': 'username', 'label': "Username", 'type': "text",},
                 {'name': 'password', 'label': "Password", 'type': "password",},
@@ -40,5 +39,5 @@ class AuthView(BaseView):
     @view_config(route_name='user_logout', renderer='../templates/base.mako')
     def logout(self):
         del self.request.session['user']
-        url = self.request.route_url('default')
+        url = self.request.route_url('user_login')
         return HTTPFound(url)

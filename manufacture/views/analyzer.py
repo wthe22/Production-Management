@@ -88,6 +88,7 @@ class AnalyzerView(BaseView):
         
         if 'submit' in self.request.params:
             taskman.apply_orders()
+            taskman.update_db_tasks()
             url = self.request.route_url('task_list')
             return HTTPFound(url)
         

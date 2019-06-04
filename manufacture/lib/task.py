@@ -36,11 +36,14 @@ class TaskManager:
         self.task_list = {}
         self.master_task_list = {}
         self.machine_sequences = {}
-        self.elapsed_time = 0
+        self.elapsed_time = None
+        self.target_time = None
 
     def update_db_tasks(self):
         self.__init__()
+        self.elapsed_time = None
         
+        # Populate task
         for task in Task.select():
             task.activate()
             task.usable_machines = []
@@ -49,12 +52,15 @@ class TaskManager:
                 task.usable_machines += [machine.id]
             self.task_list[task.id] = task
         
+        # Get machine with oldest start time
         min_time = None
         for machine_task in MachineTask.select():
+            machine_task.free()
             self.active_machines[machine_task.id] = machine_task
             
             task_id = machine_task.task_id
-            self.task_list[task_id].allocated += 1
+            if not task_id is None:
+                self.task_list[task_id].allocated += 1
             
             if machine_task.start_time is None:
                 continue
@@ -64,39 +70,21 @@ class TaskManager:
             if machine_task.start_time < min_time:
                 min_time = machine_task.start_time
         
-        # EDIT
-            self.task_list[task_id].cycles_remaining -= (self.elapsed_time - machine.start_time) // self.task_list[temp_task_id].recipe.duration
-            #task.cycles_remaining = self.cycles
-            #task.time_remaining = self.recipe.duration * self.cycles
-            #task.allocated = 0
+        if self.elapsed_time is None:
+            self.elapsed_time = int(time.time())
         
-            for machine_recipe in MachineRecipe.select().where(MachineRecipe.recipe_id == task.recipe_id):
-                machine = machine_recipe.machine
-                task.usable_machines += [machine.id]
-            self.task_list[task.id] = task
-            
-            #task.cycles_remaining = self.cycles
-            #task.time_remaining = self.recipe.duration * self.cycles
-            #task.allocated = 0
+        self.target_time = int(time.time())
         
-        self.elapsed_time = min_time    
-        target_time = int(time.time())
+        self.print_tasks("Task List")
+        self.print_machines("Machine List")
         
-        while(self.elapsed_time < target_time):
-            self.assign_tasks()
-            self.update_machine_cycles()
-            fast_forward_sec = self.lowest_machine_eta()
-            catchup_time = target_time - self.elapsed_time
-            if fast_forward_sec > catchup_time:
-                fast_forward_sec = catchup_time
-            
-            self.fast_forward(fast_forward_sec)
-            
-            self.free_machines()
-
-        return self.SUCCESS
+        self.calculate_sequence()
+        self.apply_orders()
+        return
 
     def set_tasks(self, input_orders, input_machines, description):
+        self.elapsed_time = 0
+        
         input_machines_id = [id for id, qty in input_machines]
 
         self.task_list = {}
@@ -188,7 +176,7 @@ class TaskManager:
                 continue
             if not machine.temp_task_id in active_tasks:
                 active_tasks += [machine.temp_task_id]
-
+        
         print("Active Task: {}".format(active_tasks))
 
         for t in active_tasks:
@@ -225,7 +213,7 @@ class TaskManager:
         for machine in self.active_machines.values():
             if machine.temp_task_id is None:
                 continue
-                
+            
             task = self.task_list[machine.temp_task_id]
             eta = machine.cycles * task.recipe.duration - (self.elapsed_time - machine.start_time)
             
@@ -270,8 +258,14 @@ class TaskManager:
         self.task_list = updated_recipe_task
 
     def calculate_sequence(self):
+        print("Target time: ", self.target_time)
+        
         iteration = 0
         while(self.task_list):
+            if not self.target_time is None:
+                if self.elapsed_time < self.target_time:
+                    break
+            
             print()
             print("[T+{:0>8}] Iteration #{}".format(str(datetime.timedelta(seconds=self.elapsed_time)), iteration))
             iteration += 1
@@ -281,11 +275,19 @@ class TaskManager:
             self.assign_tasks()
             self.update_machine_cycles()
             self.print_machines("Assigned machines")
-
-            lowest_eta = self.lowest_machine_eta()
-            print("Lowest ETA: {}".format(lowest_eta))
             
-            self.fast_forward(lowest_eta)
+            fast_forward_sec = self.lowest_machine_eta()
+            if not self.target_time is None:
+                catchup_time = self.target_time - self.elapsed_time
+                if fast_forward_sec > catchup_time:
+                    fast_forward_sec = catchup_time
+            
+            if fast_forward_sec == 0:
+                break
+            
+            print("Fast forward: {}".format(fast_forward_sec))
+            
+            self.fast_forward(fast_forward_sec)
             self.free_machines()
         
         print(self.machine_sequences)
@@ -349,13 +351,10 @@ class TaskManager:
         return all_notifs
     
     def apply_orders(self):
+        Task.delete().execute()
         for t in self.task_list.keys():
             self.task_list[t].save()
         
-        '''
+        MachineTask.delete().execute()
         for m, machine_task in self.active_machines.items():
-            task = self.task_list[machine_task.temp_task_id].id
-            machine_task.task_id = task.id
-            machine_task.start_time = 0
             machine_task.save()
-        '''

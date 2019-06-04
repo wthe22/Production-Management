@@ -31,7 +31,6 @@ now = datetime.datetime.today()
                 <a href="${request.route_url('analyzer_input')}"><li>ANALYZER</li></a>
                 <a href="${request.route_url('user_logout')}"><li style="float:right;">Logout</li></a>
             % else:
-                <a href="${request.route_url('default')}"><li>HOME</li></a>
                 <a href="${request.route_url('user_login')}"><li style="float:right;">Login</li></a>
             % endif
             </%block></ul>

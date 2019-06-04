@@ -8,9 +8,11 @@ from pyramid.httpexceptions import (
 
 from ..lib.forms import PostForm
 from ..lib.functions import display_time
+from ..lib.task import TaskManager
 from ..models.management import (
     Item, Recipe, RecipeInput, RecipeOutput, Stock, 
-    Machine, MachineRecipe, Task, Notification
+    Machine, MachineRecipe,
+    MachineTask, Task, Notification
 )
 from .base import BaseView
 
@@ -298,14 +300,14 @@ class StockView(ModelView):
     def add_new(self):
         return super().add_new(
             success_route = 'stock_list',
-            fields = ['item_id', 'quantity']
+            fields = ['item_id', 'quantity'],
         )
 
     @view_config(route_name='stock_edit', renderer='../templates/management/generic_edit.mako')
     def edit(self):
         return super().edit(
             success_route = 'stock_list',
-            fields = ['item_id', 'quantity']
+            fields = ['item_id', 'quantity'],
         )
 
     @view_config(route_name='stock_delete', renderer='../templates/management/stock_list.mako')
@@ -319,7 +321,7 @@ class MachineView(ModelView):
     @view_config(route_name='machine_list', renderer='../templates/management/machine_list.mako')
     def list(request):
         return {
-            'machine_list': Machine.select().order_by(Machine.name)
+            'machine_list': Machine.select().order_by(Machine.name),
         }
 
     @view_config(route_name='machine_show', renderer='../templates/management/machine_show.mako')
@@ -334,14 +336,14 @@ class MachineView(ModelView):
     def add_new(self):
         return super().add_new(
             success_route = 'machine_list',
-            fields = ['name', 'details', 'quantity']
+            fields = ['name', 'details', 'quantity'],
         )
 
     @view_config(route_name='machine_edit', renderer='../templates/management/generic_edit.mako')
     def edit(self):
         return super().edit(
             success_route = 'machine_list',
-            fields = ['name', 'details', 'quantity']
+            fields = ['name', 'details', 'quantity'],
         )
 
     @view_config(route_name='machine_delete', renderer='../templates/show_machine.mako')
@@ -354,27 +356,43 @@ class TaskView(ModelView):
     
     @view_config(route_name='task_list', renderer='../templates/management/task_list.mako')
     def list(request):
+        taskman = TaskManager()
+        taskman.update_db_tasks()
+        
         return {
-            'task_list': Task.select().order_by(Task.recipe.name)
+            'task_list': Task.select().order_by(Task.recipe.name),
+            'machine_task_list': MachineTask.select().order_by(MachineTask.start_time),
         }
 
     @view_config(route_name='task_new', renderer='../templates/management/generic_edit.mako')
     def add_new(self):
         return super().add_new(
             success_route = 'task_list',
-            fields = ['recipe_id', 'cycles', 'description']
+            fields = ['recipe_id', 'cycles', 'description'],
         )
 
     @view_config(route_name='task_edit', renderer='../templates/management/generic_edit.mako')
     def edit(self):
         return super().edit(
             success_route = 'task_list',
-            fields = ['description', 'end_time']
+            fields = ['description', 'end_time'],
         )
     
     @view_config(route_name='task_delete', renderer='../templates/management/task_list.mako')
     def delete(self):
         return super().delete(success_route='task_list')
+
+    @view_config(route_name='machine_task_delete', renderer='../templates/management/task_list.mako')
+    def delete_mt(self):
+        id = self.request.matchdict['id']
+        try:
+            selected = MachineTask.get_by_id(id)
+            selected.delete_instance()
+        except MachineTask.DoesNotExist:
+            raise exception_response(404)
+        
+        url = self.request.route_url('task_list')
+        return HTTPFound(url)
 
 
 """
