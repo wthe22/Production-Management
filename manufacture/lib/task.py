@@ -2,6 +2,7 @@ import math
 import datetime
 import time
 import copy
+from io import StringIO
 
 from ..models.management import (
     Item, Recipe, RecipeOutput,
@@ -40,6 +41,12 @@ class TaskManager:
         self.target_time = None
 
     def update_db_tasks(self):
+        debug = True
+        
+        if not debug:
+            old_stdout = sys.stdout
+            sys.stdout = mystdout = StringIO()
+
         self.__init__()
         self.elapsed_time = None
         
@@ -50,13 +57,16 @@ class TaskManager:
             for machine_recipe in MachineRecipe.select().where(MachineRecipe.recipe_id == task.recipe_id):
                 machine = machine_recipe.machine
                 task.usable_machines += [machine.id]
-            self.task_list[task.id] = task
+            self.master_task_list[task.id] = task
+        
+        self.task_list = self.master_task_list.copy()
         
         # Get machine with oldest start time
         min_time = None
         for machine_task in MachineTask.select():
-            machine_task.free()
+            machine_task.temp_task_id = machine_task.task_id
             self.active_machines[machine_task.id] = machine_task
+            self.machine_sequences[machine_task.id] = []
             
             task_id = machine_task.task_id
             if not task_id is None:
@@ -67,27 +77,40 @@ class TaskManager:
             
             if min_time is None:
                 min_time = machine_task.start_time
+                continue
+            
             if machine_task.start_time < min_time:
                 min_time = machine_task.start_time
         
+        self.elapsed_time = min_time
         if self.elapsed_time is None:
             self.elapsed_time = int(time.time())
         
         self.target_time = int(time.time())
         
-        self.print_tasks("Task List")
-        self.print_machines("Machine List")
+        print("Master Task")
+        for t, task in self.master_task_list.items():
+            print(t, ": ", task)
         
-        self.calculate_sequence()
+        print("Machine Task")
+        for m, machine in self.active_machines.items():
+            print(machine)
+        
+        time_required, machine_sequences = self.calculate_sequence()
         self.apply_orders()
-        return
+        
+        if not debug:
+            sys.stdout = old_stdout
+            test_output = mystdout.getvalue()
+            
+        return machine_sequences
 
     def set_tasks(self, input_orders, input_machines, description):
         self.elapsed_time = 0
         
         input_machines_id = [id for id, qty in input_machines]
 
-        self.task_list = {}
+        self.master_task_list = {}
         for item, qty in input_orders:
             item = Item.get(Item.id == item)
             recipe_output = list(RecipeOutput.select().where(RecipeOutput.item_id == item.id))
@@ -106,7 +129,7 @@ class TaskManager:
                     print("error: Machine '{}' is required to produce item '{}'".format(machine.name, item.name))
                     return self.FAILED
             
-            id = len(self.task_list)
+            id = len(self.master_task_list)
             task = Task(
                 recipe = recipe,
                 cycles = cycles,
@@ -115,9 +138,9 @@ class TaskManager:
             )
             task.activate()
             task.usable_machines = usable_machines
-            self.task_list[id] = task
+            self.master_task_list[id] = task
         
-        self.master_task_list = self.task_list.copy()
+        self.task_list = self.master_task_list.copy()
         
         self.active_machines = {}
         for machine, qty in input_machines:
@@ -223,16 +246,25 @@ class TaskManager:
                 lowest_eta = eta
         return lowest_eta
     
-    def fast_forward(self, seconds):
+    def fast_forward(self, time_seconds):
         for m, machine in self.active_machines.items():
             if machine.temp_task_id is None:
                 continue
 
             temp_task_id = self.active_machines[m].temp_task_id
+            
+            
+            if self.elapsed_time + time_seconds < machine.start_time:
+                continue
+            
+            applied_seconds = time_seconds
+            if self.elapsed_time < machine.start_time:
+                applied_seconds = self.elapsed_time + time_seconds - machine.start_time
+            
+            print("AF: ", m, applied_seconds)
+            self.task_list[temp_task_id].time_remaining -= applied_seconds
 
-            self.task_list[temp_task_id].time_remaining -= seconds
-
-        self.elapsed_time += seconds
+        self.elapsed_time += time_seconds
     
     def free_machines(self):
         for m, machine in self.active_machines.items():
@@ -262,12 +294,8 @@ class TaskManager:
         
         iteration = 0
         while(self.task_list):
-            if not self.target_time is None:
-                if self.elapsed_time < self.target_time:
-                    break
-            
             print()
-            print("[T+{:0>8}] Iteration #{}".format(str(datetime.timedelta(seconds=self.elapsed_time)), iteration))
+            print("[T+{:0>8}] Iteration #{}".format(self.elapsed_time, iteration))
             iteration += 1
 
             self.print_tasks("Task List")
@@ -275,6 +303,10 @@ class TaskManager:
             self.assign_tasks()
             self.update_machine_cycles()
             self.print_machines("Assigned machines")
+            
+            if not self.target_time is None:
+                if self.elapsed_time >= self.target_time:
+                    break
             
             fast_forward_sec = self.lowest_machine_eta()
             if not self.target_time is None:
@@ -290,7 +322,9 @@ class TaskManager:
             self.fast_forward(fast_forward_sec)
             self.free_machines()
         
+        print("Machine Sequence")
         print(self.machine_sequences)
+        
         return self.elapsed_time, self.machine_sequences
     
     def sequence2notif(self, machine_sequences):
@@ -351,10 +385,19 @@ class TaskManager:
         return all_notifs
     
     def apply_orders(self):
+        print("APPLY ORDERS")
+        
         Task.delete().execute()
-        for t in self.task_list.keys():
-            self.task_list[t].save()
+        for t, task in self.task_list.items():
+            task.save(force_insert=True)
+            self.task_list[t].id = Task.select().order_by(Task.id.desc()).get()
         
         MachineTask.delete().execute()
+        if len(self.task_list) == 0:
+            return
+        
         for m, machine_task in self.active_machines.items():
-            machine_task.save()
+            if not machine_task.temp_task_id is None:
+                machine_task.task_id = self.task_list[machine_task.temp_task_id].id
+            machine_task.save(force_insert=True)
+        

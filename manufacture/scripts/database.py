@@ -1,27 +1,14 @@
-import platform
-import os
-
 import peewee
 
 from models import (
     management,
     auth,
 )
+from lib.functions import (
+    clear_console,
+    input_int,
+)
 from .dataset import get_dataset
-
-
-def clear_console():
-    if (platform.system() == "Windows"):
-        os.system("cls")
-    if (platform.system() == "Linux"):
-        os.system("clear")
-
-def input_int():
-    try:
-        user_input = int(input())
-    except ValueError:
-        return
-    return user_input
 
 
 class DatabaseTool:

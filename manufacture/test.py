@@ -11,12 +11,12 @@ class TutorialViewTests(unittest.TestCase):
         testing.tearDown()
 
     def test_home(self):
-        from .views import default
+        from views.default import HomeView
 
         request = testing.DummyRequest()
-        inst = default(request)
-        response = inst.home()
-        self.assertEqual('Home View', response['name'])
+        inst = HomeView(request)
+        response = inst.index()
+        pirnt(response)
 
     def test_hello(self):
         from .views import TutorialViews

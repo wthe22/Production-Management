@@ -1,9 +1,14 @@
 <%inherit file="../base.mako" />
 
+<%!
+import time
+time_format = "%Y-%m-%d %H:%M:%S"
+%>
+
 
 <%block name="content">
 <div style="width:100%;">
-    <div class="horizontal-list" style="width:70%;">
+    <div class="horizontal-list" style="width:60%;">
         <h2>Production Management Website</h2>
         <br />
         <h3>本科毕业论文</h3>
@@ -28,14 +33,14 @@
             </div>
         </div>
     </div>
-    <div class="horizontal-list" style="width:30%; float:right;">
+    <div class="horizontal-list" style="width:40%; float:right;">
         <h3>Notifications</h3>
         <table class="striped" style="width:100%;">
             <tr><th>Time</th><th>Message</th><th>Action</th></tr>
             % for notification in notification_list:
                 <tr>
-                    <td>${notification.time}</td>
-                    <td>${notification.title}</td>
+                    <td>${time.strftime(time_format, time.localtime(notification.time))}</td>
+                    <td>${notification.description}</td>
                     <td><a href="${request.route_url('notification_delete', id=notification.id)}">Delete</a></td>
                 </tr>
             % endfor

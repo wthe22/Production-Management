@@ -18,14 +18,21 @@ class MyRequest(Request):
         management.db.init('manufacture/databases/test.sqlite3')
         management.db.connect()
         
+        self.db_list = [auth.db, management.db]
+        
+        self.db_transactions = []
+        for db in self.db_list:
+            self.db_transactions += [db.atomic()]
         
         self.add_finished_callback(self.finish)
 
     def finish(self, request):
-        for db in [auth.db, management.db]:
+        for db in self.db_list:
+            db.commit()
+            
             if not db.is_closed():
                 db.close()
-
+    
 
 def main(global_config, **settings):
     my_session_factory = SignedCookieSessionFactory('secret_key_here')

@@ -357,7 +357,10 @@ class TaskView(ModelView):
     @view_config(route_name='task_list', renderer='../templates/management/task_list.mako')
     def list(request):
         taskman = TaskManager()
-        taskman.update_db_tasks()
+        machine_sequences = taskman.update_db_tasks()
+        
+        for notif in taskman.sequence2log(machine_sequences):
+            notif.save()
         
         return {
             'task_list': Task.select().order_by(Task.recipe.name),

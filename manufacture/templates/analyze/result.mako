@@ -24,7 +24,7 @@ Time required: ${time_required}<br />
 </table>
 <br />
 
-<h2>Machine Sequences</h2>
+<h2>Machine Task Distribution</h2>
 % for m, notifications in machine_sequences.items():
 <div class="horizontal-list">
     <h3>${machine_list[m].machine} (#${m})</h3>

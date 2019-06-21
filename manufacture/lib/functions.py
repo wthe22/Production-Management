@@ -1,5 +1,23 @@
 
 
+def clear_console():
+    import platform
+    import os
+
+    if (platform.system() == "Windows"):
+        os.system("cls")
+    if (platform.system() == "Linux"):
+        os.system("clear")
+
+
+def input_int():
+    try:
+        user_input = int(input())
+    except ValueError:
+        return
+    return user_input
+
+
 def display_time(seconds, granularity=2):
     result = []
 

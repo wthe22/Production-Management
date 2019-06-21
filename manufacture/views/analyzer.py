@@ -11,6 +11,8 @@ from ..lib.task import TaskManager
 from ..models.management import (
     Item, Recipe, RecipeOutput,
     Machine, MachineRecipe,
+    MachineTask, Task,
+    Notification,
 )
 from .base import BaseView
 
@@ -87,6 +89,7 @@ class AnalyzerView(BaseView):
         exit_code = taskman.set_tasks(input_orders, input_machines, description="Test")
         
         if 'submit' in self.request.params:
+            Notification.delete().execute()
             taskman.apply_orders()
             taskman.update_db_tasks()
             url = self.request.route_url('task_list')
@@ -117,9 +120,6 @@ class AnalyzerView(BaseView):
     
     @view_config(route_name='analyzer_test', renderer='../templates/analyze/result.mako')
     def run_test(self):
-        old_stdout = sys.stdout
-        sys.stdout = mystdout = StringIO()
-
         readable_input_orders = [
             ['Copper Nail', 300 / 20 * 10],
             ['Copper Wire', 300 / 30 * 5],
