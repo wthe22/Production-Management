@@ -18,21 +18,17 @@ class MyRequest(Request):
         management.db.init('manufacture/databases/test.sqlite3')
         management.db.connect()
         
-        self.db_list = [auth.db, management.db]
-        
-        self.db_transactions = []
-        for db in self.db_list:
-            self.db_transactions += [db.atomic()]
+        self.models_db = [auth.db, management.db]
         
         self.add_finished_callback(self.finish)
 
     def finish(self, request):
-        for db in self.db_list:
+        for db in self.models_db:
             db.commit()
             
             if not db.is_closed():
                 db.close()
-    
+
 
 def main(global_config, **settings):
     my_session_factory = SignedCookieSessionFactory('secret_key_here')
@@ -81,11 +77,14 @@ def main(global_config, **settings):
     config.add_route('analyzer_test', '/analyzer/test/')
     config.add_route('analyzer_result', '/analyzer/result/')
     
+    config.add_route('download_file', '/download/{filename}')
+    
     config.add_static_view(name='static', path='static')
     
     config.scan('.views.default')
     config.scan('.views.auth')
     config.scan('.views.management')
     config.scan('.views.analyzer')
+    config.scan('.views.files')
 
     return config.make_wsgi_app()

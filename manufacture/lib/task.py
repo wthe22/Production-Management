@@ -400,4 +400,4 @@ class TaskManager:
             if not machine_task.temp_task_id is None:
                 machine_task.task_id = self.task_list[machine_task.temp_task_id].id
             machine_task.save(force_insert=True)
-        
+

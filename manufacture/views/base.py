@@ -1,7 +1,3 @@
-from ..models import (
-    auth,
-    management,
-)
 
 
 class BaseView:

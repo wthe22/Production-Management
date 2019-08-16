@@ -1,12 +1,16 @@
+@charset "UTF-8";
+/* CSS Document */
+
+
 html {
     width: 100%;
-    min-height: 100%;
     margin: 0px;
     padding: 0px;
 }
+
+
 body {
     width: 100%;
-    min-height: 100%;
     margin: 0px;
     padding: 0px;
     background-color: #ffffff;
@@ -14,51 +18,28 @@ body {
 	font-size: 15px;
 	color: black;
 }
-#navbar {
-    width: 100%;
-    height: auto;
-    margin: 0px;
-    padding: 0px;
-    background-color: #667;
-    clear: both;
-    
-    color: white;
-    font-family: Verdana, Geneva, sans-serif;
-    font-size: 18px;
+
+
+/*
+.title {
+	font-family: "space age";
+	text-align: center;
+	font-size: 80px;
+	margin: 60px 0px;
 }
-#navbar ul {
-    margin: 0px 20px;
-    padding: 0px;
-    list-style-type: none;
-    overflow: hidden;
-}
-#navbar li {
-    margin: 0px;
-    padding: 5px 10px;
-    float: left;
-}
-#navbar li:hover {
-    background-color: #444;
-}
-#navbar a, a:visited {
-    color: inherit;
-}
-#navbar a {
-    display: block;
-    text-align: center;
-    text-decoration:none;
-}
-#title {
+*/
+
+.title {
     height: auto;
     margin: 0px;
     padding: 0px;
 }
-#title h1 {
+.title h1 {
     height: auto;
     margin: 0px;
     padding: 20px 0px;
 }
-#title img {
+.title img {
     height: 70px;
     margin: 3px 20px;
     padding: 0px;
@@ -66,12 +47,50 @@ body {
     display: inline-block;
     float: left;
 }
-#content {
+
+
+.navbar {
+	font-size: 20px;
+    background-color: #667;
+	text-align: center;
+	padding-top: 0.1px;
+	padding-bottom: 0.1px;
+}
+
+.navbar ul {
+	letter-spacing: 1px;
+	margin-top: 0.7%;
+	margin-bottom: 0.7%;
+}
+
+.navbar li {
+	display: inline;
+	margin-left: 30px;
+	margin-right: 30px;
+}
+
+.navbar a {
+	text-decoration: none;
+    color: #fff;
+	font-family: Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+}
+
+/*
+    background-color: #c0c0d0;
+a:hover {
+    background-color: #444;
+}
+*/
+
+
+.content {
     min-height: 100vh;
     margin: 0px;
     padding: 20px 20px;
 }
-#footer {
+
+
+.footer {
     left: 0px;
     bottom: 0px;
     margin: 0px;
@@ -85,22 +104,48 @@ body {
     text-align: center;
 }
 
+/*
+.scrollable {
+    overflow:auto;
+}
+<div style="width:320px; height:80px; ">
+<table cellspacing="0" cellpadding="1" border="1" width="300" >
+.fixed_header tbody{
+}
+.fixed_header thead tr{
+  display:block;
+}
+*/
 
 table.striped {
     margin: 0px;
     padding: 0px;
     background-color: #fff;
 }
+
+table.striped thead {
+    display: block;
+}
+
+table.striped tbody {
+    display: block;
+    overflow: auto;
+    width: 100%;
+}
+
 table.striped td, th {
     text-align: left;
     padding: 5px;
 }
+
 table.striped tr:first-child {
     background-color: #ccc;
 }
+
 table.striped tr:nth-child(odd) {
     background-color: #eee;
 }
+
 table.striped tr:nth-child(even) {
     background-color: #fff;
 }
@@ -111,9 +156,11 @@ table.borderless {
     padding: 0px;
     background-color: #fff;
 }
+
 table.borderless tr {
     background-color: inherit;
 }
+
 table.borderless td, th {
     text-align: left;
     margin: 0px;

@@ -35,8 +35,11 @@ time_format = "%Y-%m-%d %H:%M:%S"
     </div>
     <div class="horizontal-list" style="width:40%; float:right;">
         <h3>Notifications</h3>
-        <table class="striped" style="width:100%;">
-            <tr><th>Time</th><th>Message</th><th>Action</th></tr>
+        <table class="striped" style="width:100%; height: 50vh;">
+            <thead>
+                <tr><th>Time</th><th>Message</th><th>Action</th></tr>
+            </thead>
+            <tbody>
             % for notification in notification_list:
                 <tr>
                     <td>${time.strftime(time_format, time.localtime(notification.time))}</td>
@@ -44,6 +47,7 @@ time_format = "%Y-%m-%d %H:%M:%S"
                     <td><a href="${request.route_url('notification_delete', id=notification.id)}">Delete</a></td>
                 </tr>
             % endfor
+            </tbody>
         </table>
     </div>
 </div>

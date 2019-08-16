@@ -6,6 +6,7 @@ requires = [
     'pyramid',
     'pyramid_mako',
     'waitress',
+    'peewee',
 ]
 
 # List of dependencies installed via `pip install -e ".[dev]"`
