@@ -85,6 +85,5 @@ def main(global_config, **settings):
     config.scan('.views.auth')
     config.scan('.views.management')
     config.scan('.views.analyzer')
-    config.scan('.views.files')
 
     return config.make_wsgi_app()
