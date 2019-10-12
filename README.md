@@ -14,6 +14,8 @@ cd /d "path/to/source"
 pip install -e .
 pserve development.ini --reload
 ```
+If you prefer not to use vitrual environment or install the project, you can run 'start.py' instead.
+
 
 First time use:
 1. Run `manufacture/manage.py`
